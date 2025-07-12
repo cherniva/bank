@@ -23,7 +23,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- Spring Boot Version -->
-		<spring-cloud.version>2023.0.0</spring-cloud.version>
+		<spring-cloud.version>2025.0.0</spring-cloud.version>
 
 		<!-- Database -->
 		<postgresql.version>42.7.1</postgresql.version>
@@ -44,6 +44,11 @@
 	</properties>
 
 	<modules>
+		<module>config-server</module>
+		<module>eureka-server</module>
+		<module>api-gateway</module>
+		<module>auth-server</module>
+
 		<module>common</module>
 		<module>front-ui</module>
 		<module>accounts-service</module>
