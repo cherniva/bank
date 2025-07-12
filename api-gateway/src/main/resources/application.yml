@@ -1,7 +1,7 @@
+server:
+  port: 9001
 spring:
   application:
     name: api-gateway
   config:
-    import: configserver:http://127.0.0.1:8888
-server:
-  port: 9001
+    import: "configserver:http://localhost:8888"

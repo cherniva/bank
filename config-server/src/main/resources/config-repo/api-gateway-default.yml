@@ -1,12 +1,22 @@
 spring:
   cloud:
     gateway:
+      discovery:
+        locator:
+          enabled: true
+          lowerCaseServiceId: true
       server:
         webmvc:
           routes:
-            - id: some-service-route  # ID роута
-              uri: http://127.0.0.1:9001  # URI целевого микросервиса
+            - id: user-service
+              uri: lb://user-service
               predicates:
-                - Path=/some-service/**   # URI поступающего в Gateway запроса
+                - Path=/users/**
               filters:
-                - RewritePath=/some-service/?(?<segment>.*), /$\{segment}
+                - StripPrefix=1
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true

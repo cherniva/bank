@@ -10,3 +10,9 @@ spring:
       server:
         native:
           search-locations: classpath:/config-repo/ # Фолдер, из которого загружаются конфигурации
+#eureka: # нет смысла регистрировать конфиг в eureka, так как он нужен на стадии запуска сервисов
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka
+#    register-with-eureka: true
+#    fetch-registry: true
