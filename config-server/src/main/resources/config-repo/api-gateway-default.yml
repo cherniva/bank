@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: some-service-route  # ID роута
+              uri: http://127.0.0.1:9001  # URI целевого микросервиса
+              predicates:
+                - Path=/some-service/**   # URI поступающего в Gateway запроса
+              filters:
+                - RewritePath=/some-service/?(?<segment>.*), /$\{segment}
