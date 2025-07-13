@@ -1,0 +1,7 @@
+server:
+  port: 8091
+spring:
+  application:
+    name: accounts-service
+  config:
+    import: "configserver:http://localhost:8888"

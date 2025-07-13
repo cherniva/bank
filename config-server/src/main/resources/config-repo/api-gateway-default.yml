@@ -6,12 +6,12 @@ spring:
           enabled: true
           lowerCaseServiceId: true
       routes:
-        - id: user-service
-          uri: lb://user-service       # адрес user сервиса
+        - id: accounts-service
+          uri: lb://accounts-service      # адрес user сервиса
           predicates:
             - Path=/api/hello          # перехватываем путь /api/hello
           filters:
-            - TokenRelay=gateway-client
+            - TokenRelay=gateway-client # use clientRegistrationId
   security:
     oauth2:
       client:
@@ -19,7 +19,7 @@ spring:
           keycloak:
             token-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/token
         registration:
-          gateway-client:
+          gateway-client: # clientRegistrationId
             provider: keycloak
             client-id: gateway
             client-secret: Asdtvc2djsXQM9eoGfUZ1SrWqoPaINRV
