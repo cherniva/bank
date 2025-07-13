@@ -5,15 +5,27 @@ spring:
         locator:
           enabled: true
           lowerCaseServiceId: true
-      server:
-        webmvc:
-          routes:
-            - id: user-service
-              uri: lb://user-service
-              predicates:
-                - Path=/users/**
-              filters:
-                - StripPrefix=1
+      routes:
+        - id: user-service
+          uri: lb://user-service       # адрес user сервиса
+          predicates:
+            - Path=/api/hello          # перехватываем путь /api/hello
+          filters:
+            - TokenRelay=gateway-client
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            token-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/token
+        registration:
+          gateway-client:
+            provider: keycloak
+            client-id: gateway
+            client-secret: Asdtvc2djsXQM9eoGfUZ1SrWqoPaINRV
+            scope: resource.read
+            authorization-grant-type: client_credentials
+
 eureka:
   client:
     service-url:

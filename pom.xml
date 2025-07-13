@@ -47,7 +47,6 @@
 		<module>config-server</module>
 		<module>eureka-server</module>
 		<module>api-gateway</module>
-		<module>auth-server</module>
 
 		<module>common</module>
 		<module>front-ui</module>
