@@ -120,7 +120,7 @@
 
 			<!-- Internal Dependencies -->
 			<dependency>
-				<groupId>com.yourcompany</groupId>
+				<groupId>com.cherniva</groupId>
 				<artifactId>common</artifactId>
 				<version>${project.version}</version>
 			</dependency>
