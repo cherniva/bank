@@ -14,7 +14,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers("/api/hello").hasAuthority("SCOPE_profile") //Require scope
+                                .requestMatchers("/api/hello").hasAuthority("SCOPE_resource.read") //Require scope
                                 .anyRequest().authenticated() // All other requests need authentication
                 )
                 .oauth2ResourceServer(oauth2 ->
