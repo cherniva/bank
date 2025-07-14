@@ -5,3 +5,7 @@ spring:
     name: api-gateway
   config:
     import: "configserver:http://localhost:8888"
+
+logging:
+  level:
+    org.springframework.security: DEBUG
