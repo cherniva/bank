@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.cherniva.common.model")
 @EnableDiscoveryClient
 @EntityScan(basePackages = {"com.cherniva.common.model"})
 @EnableJpaRepositories(basePackages = {"com.cherniva.common.repository"})
