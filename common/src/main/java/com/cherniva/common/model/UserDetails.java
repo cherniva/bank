@@ -9,7 +9,7 @@ import java.util.List;
 
 @Entity
 @Data
-public class User {
+public class UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -18,6 +18,6 @@ public class User {
     private String name;
     private String surname;
     private LocalDate birthday;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "userDetails", cascade = CascadeType.ALL)
     private List<Account> accounts = new ArrayList<>();
 }

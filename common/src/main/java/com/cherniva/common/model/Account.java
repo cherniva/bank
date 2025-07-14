@@ -10,8 +10,8 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "user_details_id")
+    private UserDetails userDetails;
     @ManyToOne
     @JoinColumn(name = "currency_id")
     private Currency currency;

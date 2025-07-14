@@ -3,7 +3,7 @@ package com.cherniva.common.example;
 import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.mapper.UserAccountMapper;
 import com.cherniva.common.mapper.AccountMapper;
-import com.cherniva.common.model.User;
+import com.cherniva.common.model.UserDetails;
 import com.cherniva.common.model.Account;
 import com.cherniva.common.model.Currency;
 import com.cherniva.common.dto.UserAccountResponseDto;
@@ -44,16 +44,16 @@ public class MapperUsageExample {
         account2.setId(2L);
         account2.setCurrency(eur);
 
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("john.doe");
-        user.setName("john");
-        user.setSurname("doe");
-        user.setBirthday(LocalDate.of(1990, 1, 1));
-        user.setAccounts(Arrays.asList(account1, account2));
+        UserDetails userDetails = new UserDetails();
+        userDetails.setId(1L);
+        userDetails.setUsername("john.doe");
+        userDetails.setName("john");
+        userDetails.setSurname("doe");
+        userDetails.setBirthday(LocalDate.of(1990, 1, 1));
+        userDetails.setAccounts(Arrays.asList(account1, account2));
 
         // Map User to DTO
-        UserAccountResponseDto dto = userAccountMapper.userToUserAccountResponse(user);
+        UserAccountResponseDto dto = userAccountMapper.userToUserAccountResponse(userDetails);
         System.out.println("Mapped DTO: " + dto.getUserId() + " - " + dto.getName());
 
         // Map individual account
@@ -61,8 +61,8 @@ public class MapperUsageExample {
         System.out.println("Account DTO: " + accountDto.getCurrencyCode());
 
         // Map collection
-        List<User> users = Arrays.asList(user);
-        List<UserAccountResponseDto> dtos = userAccountMapper.usersToUserAccountResponses(users);
+        List<UserDetails> userDetailsList = Arrays.asList(userDetails);
+        List<UserAccountResponseDto> dtos = userAccountMapper.usersToUserAccountResponses(userDetailsList);
         System.out.println("Collection mapping: " + dtos.size() + " users mapped");
     }
 } 

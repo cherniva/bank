@@ -1,6 +1,6 @@
 package com.cherniva.common.mapper;
 
-import com.cherniva.common.model.User;
+import com.cherniva.common.model.UserDetails;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -17,11 +17,11 @@ public interface UserAccountMapper {
     @Mapping(source = "id", target = "userId")
     @Mapping(source = "accounts", target = "accounts")
     @Mapping(source = "name", target = "name", qualifiedByName = "capitalizeName")
-    UserAccountResponseDto userToUserAccountResponse(User user);
+    UserAccountResponseDto userToUserAccountResponse(UserDetails userDetails);
 
     @Mapping(source = "userId", target = "id")
     @Mapping(source = "accounts", target = "accounts")
-    User userAccountResponseToUser(UserAccountResponseDto dto);
+    UserDetails userAccountResponseToUser(UserAccountResponseDto dto);
 
     // Custom mapping method for name formatting
     @Named("capitalizeName")
@@ -33,5 +33,5 @@ public interface UserAccountMapper {
     }
 
     // Collection mapping
-    List<UserAccountResponseDto> usersToUserAccountResponses(List<User> users);
+    List<UserAccountResponseDto> usersToUserAccountResponses(List<UserDetails> userDetails);
 } 
