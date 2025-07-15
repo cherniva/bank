@@ -39,15 +39,15 @@ public class LoginController {
             loginDto.setUsername(username);
             loginDto.setPassword(password);
             
-            UserAccountResponseDto userResponse = authService.authenticateUser(loginDto);
+//            UserAccountResponseDto userResponse = authService.authenticateUser(loginDto);
+//
+//            // Set session cookie
+//            Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
+//            sessionCookie.setPath("/");
+//            sessionCookie.setMaxAge(30 * 60); // 30 minutes
+//            response.addCookie(sessionCookie);
             
-            // Set session cookie
-            Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
-            sessionCookie.setPath("/");
-            sessionCookie.setMaxAge(30 * 60); // 30 minutes
-            response.addCookie(sessionCookie);
-            
-            return "redirect:/main";
+            return "redirect:/";
         } catch (Exception e) {
             model.addAttribute("error", "Invalid username or password");
             return "login";
