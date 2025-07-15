@@ -4,3 +4,8 @@ eureka:
       defaultZone: http://localhost:8761/eureka
     register-with-eureka: true
     fetch-registry: true
+
+# Accounts service configuration using service discovery
+accounts:
+  service:
+    name: accounts-service

@@ -17,6 +17,7 @@ public class AuthService {
     private final UserDetailsRepo userDetailsRepo;
     private final PasswordEncoder passwordEncoder;
     private final UserAccountMapper userAccountMapper;
+    private final SessionService sessionService;
 
     public UserAccountResponseDto authenticateUser(UserLoginDto userLoginDto) {
         Optional<UserDetails> userDetailsOpt = userDetailsRepo.findByUsername(userLoginDto.getUsername());
@@ -28,9 +29,15 @@ public class AuthService {
         UserDetails userDetails = userDetailsOpt.get();
         
         if (!passwordEncoder.matches(userLoginDto.getPassword(), userDetails.getPassword())) {
-            throw new RuntimeException("Invalid password"); // todo need better solution
+            throw new RuntimeException("Invalid password");
         }
         
-        return userAccountMapper.userToUserAccountResponse(userDetails);
+        // Create session
+        String sessionId = sessionService.createSession(userDetails.getUsername(), userDetails.getId());
+        
+        UserAccountResponseDto response = userAccountMapper.userToUserAccountResponse(userDetails);
+        response.setSessionId(sessionId); // You'll need to add this field to UserAccountResponseDto
+        
+        return response;
     }
 }

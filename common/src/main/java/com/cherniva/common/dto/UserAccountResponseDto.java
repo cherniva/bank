@@ -12,4 +12,5 @@ public class UserAccountResponseDto {
     private String surname;
     private LocalDate birthday;
     private List<AccountDto> accounts;
+    private String sessionId;
 } 
