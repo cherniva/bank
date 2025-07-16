@@ -22,9 +22,14 @@ public class LoginController {
     private final AuthService authService;
     
     @GetMapping
-    public String getLogin(@RequestParam(value = "error", required = false) String error, Model model) {
+    public String getLogin(@RequestParam(value = "error", required = false) String error, 
+                          @RequestParam(value = "success", required = false) String success,
+                          Model model) {
         if (error != null) {
             model.addAttribute("error", "Invalid username or password");
+        }
+        if (success != null) {
+            model.addAttribute("success", "Registration successful! Please login with your new account.");
         }
         return "login";
     }

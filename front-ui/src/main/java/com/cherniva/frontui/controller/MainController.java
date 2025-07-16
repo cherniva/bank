@@ -17,13 +17,12 @@ public class MainController {
 
     private final SessionService sessionService;
 
-    @GetMapping("/")
-    public String home(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
+    @GetMapping({"/", "/main"})
+    public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
 //        if (sessionId != null) {
 //            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
 //
 //            if (sessionValidation.isValid()) {
-//                // User is authenticated
 //                populateModelWithUserData(model, sessionValidation);
 //                return "main";
 //            }
@@ -33,24 +32,10 @@ public class MainController {
         sessionValidation.setUserId(1L);
         populateModelWithUserData(model, sessionValidation);
         return "main";
-        
+
         // User is not authenticated
 //        model.addAttribute("authenticated", false);
 //        return "redirect:/login";
-    }
-
-    @GetMapping("/main")
-    public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
-        if (sessionId != null) {
-            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
-            
-            if (sessionValidation.isValid()) {
-                populateModelWithUserData(model, sessionValidation);
-                return "main";
-            }
-        }
-        
-        return "redirect:/login";
     }
     
     private void populateModelWithUserData(Model model, SessionValidationDto sessionValidation) {
