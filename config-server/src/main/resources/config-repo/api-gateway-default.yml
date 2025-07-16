@@ -1,30 +1,63 @@
 spring:
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lowerCaseServiceId: true
-      routes:
-        - id: accounts-service
-          uri: lb://accounts-service      # адрес user сервиса
-          predicates:
-            - Path=/api/hello          # перехватываем путь /api/hello
-          filters:
-            - TokenRelay=gateway-client # use clientRegistrationId
+      server:
+        webflux:
+          locator:
+            enabled: true
+            lowerCaseServiceId: true
+          routes:
+            - id: accounts-service
+              uri: lb://accounts-service      # адрес user сервиса
+              predicates:
+                - Path=/api/hello          # перехватываем путь /api/hello
+              filters:
+                - TokenRelay=gateway-client # use clientRegistrationId
+  #      discovery:
+  #        locator:
+  #          enabled: true
+  #          lowerCaseServiceId: true
+  #      routes:
+  #        - id: accounts-service
+  #          uri: lb://accounts-service      # адрес user сервиса
+  #          predicates:
+  #            - Path=/api/hello          # перехватываем путь /api/hello
+  #          filters:
+  #            - TokenRelay=gateway-client # use clientRegistrationId
   security:
     oauth2:
       client:
         provider:
           keycloak:
             token-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/token
+            authorization-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/auth
+            user-info-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/userinfo
+            jwk-set-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/certs
+            issuer-uri: http://localhost:8080/realms/bankrealm
         registration:
-          gateway-client: # clientRegistrationId
+          gateway-client:
             provider: keycloak
             client-id: gateway
-            client-secret: Asdtvc2djsXQM9eoGfUZ1SrWqoPaINRV
-            scope: resource.read
-            authorization-grant-type: client_credentials
+            client-secret: 5FsSSywj2svgdUdvQhTOTa5QVF3UY52J
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/bankrealm
+#  security:
+#    oauth2:
+#      client:
+#        provider:
+#          keycloak:
+#            token-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/token
+#        registration:
+#          gateway-client: # clientRegistrationId
+#            provider: keycloak
+#            client-id: gateway
+#            client-secret: 5FsSSywj2svgdUdvQhTOTa5QVF3UY52J
+#            scope: resource.read
+#            authorization-grant-type: client_credentials
 
 eureka:
   client:
