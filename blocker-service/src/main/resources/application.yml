@@ -1,0 +1,11 @@
+server:
+  port: 8092
+spring:
+  application:
+    name: blocker-service
+  config:
+    import: "configserver:http://localhost:8888"
+
+logging:
+  level:
+    org.springframework.security: DEBUG

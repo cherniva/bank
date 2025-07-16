@@ -1,17 +1,19 @@
 spring:
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lowerCaseServiceId: true
-      routes:
-        - id: accounts-service
-          uri: lb://accounts-service      # адрес user сервиса
-          predicates:
-            - Path=/api/hello          # перехватываем путь /api/hello
-          filters:
-            - TokenRelay=gateway-client # use clientRegistrationId
+      server:
+        webmvc:
+          discovery:
+            locator:
+              enabled: true
+              lowerCaseServiceId: true
+          routes:
+            - id: accounts-service
+              uri: lb://accounts-service      # адрес user сервиса
+              predicates:
+                - Path=/api/hello          # перехватываем путь /api/hello
+              filters:
+                - TokenRelay=gateway-client # use clientRegistrationId
   security:
     oauth2:
       client:
@@ -22,7 +24,7 @@ spring:
           gateway-client: # clientRegistrationId
             provider: keycloak
             client-id: gateway
-            client-secret: Asdtvc2djsXQM9eoGfUZ1SrWqoPaINRV
+            client-secret: 64bHVrtzGzfuhd0CWZA7sldmpDQ95d6u
             scope: resource.read
             authorization-grant-type: client_credentials
 
