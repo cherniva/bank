@@ -59,7 +59,7 @@ public class ExchangeRateGeneratorService {
             HttpEntity<List<ExchangeRateDto>> requestEntity = new HttpEntity<>(rates, headers);
             
             // Send to exchange service with token
-            String exchangeServiceUrl = "http://localhost:8093/exchange/course/update";
+            String exchangeServiceUrl = "lb://exchange-service/exchange/course/update";
             ResponseEntity<Object> response = restTemplate.exchange(
                 exchangeServiceUrl, 
                 HttpMethod.POST, 
