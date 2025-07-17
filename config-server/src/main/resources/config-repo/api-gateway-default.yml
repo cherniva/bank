@@ -43,7 +43,7 @@ spring:
         - id: exchange-service
           uri: lb://exchange-service
           predicates:
-            - Path=/api/notifications/**, /notifications/**
+            - Path=/exchange/course/update, /exchange/course
           metadata:
             service-name: exchange-service
 
@@ -93,35 +93,35 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/bankrealm
 
-# Gateway authentication configuration
-gateway:
-  auth:
-    # Service path mappings to OAuth2 client registration IDs
-    service-client-mappings:
-      "/api/accounts/": "gateway-client"
-      "/accounts/": "gateway-client"
-      "/api/users/": "gateway-client"
-      "/users/": "gateway-client"
-      "/api/transactions/": "gateway-client"
-      "/transactions/": "gateway-client"
-      "/api/notifications/": "gateway-client"
-      "/notifications/": "gateway-client"
-      # You can add different clients for different services
-      # "/api/admin/": "admin-gateway-client"
-      # "/api/internal/": "internal-gateway-client"
-    
-    # Paths that should skip authentication entirely
-    skip-auth-paths:
-      - "/auth/"
-      - "/public/"
-      - "/actuator/"
-      - "/health"
-      - "/info"
-      - "/swagger-ui/"
-      - "/v3/api-docs/"
-    
-    # Default OAuth2 client registration ID for API paths without specific mapping
-    default-client-registration-id: "gateway-client"
+## Gateway authentication configuration
+#gateway:
+#  auth:
+#    # Service path mappings to OAuth2 client registration IDs
+#    service-client-mappings:
+#      "/api/accounts/": "gateway-client"
+#      "/accounts/": "gateway-client"
+#      "/api/users/": "gateway-client"
+#      "/users/": "gateway-client"
+#      "/api/transactions/": "gateway-client"
+#      "/transactions/": "gateway-client"
+#      "/api/notifications/": "gateway-client"
+#      "/notifications/": "gateway-client"
+#      # You can add different clients for different services
+#      # "/api/admin/": "admin-gateway-client"
+#      # "/api/internal/": "internal-gateway-client"
+#
+#    # Paths that should skip authentication entirely
+#    skip-auth-paths:
+#      - "/auth/"
+#      - "/public/"
+#      - "/actuator/"
+#      - "/health"
+#      - "/info"
+#      - "/swagger-ui/"
+#      - "/v3/api-docs/"
+#
+#    # Default OAuth2 client registration ID for API paths without specific mapping
+#    default-client-registration-id: "gateway-client"
 
 eureka:
   client:

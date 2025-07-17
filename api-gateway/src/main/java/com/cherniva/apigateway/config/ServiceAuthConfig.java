@@ -38,6 +38,8 @@ public class ServiceAuthConfig {
         serviceClientMappings.put("/transactions/", "gateway-client");
         serviceClientMappings.put("/api/notifications/", "gateway-client");
         serviceClientMappings.put("/notifications/", "gateway-client");
+        serviceClientMappings.put("/exchange/course", "gateway-client");
+        serviceClientMappings.put("/exchange/course/update", "gateway-client");
         
         // Set default skip auth paths
         skipAuthPaths.add("/auth/");

@@ -52,14 +52,14 @@ public class ExchangeRateGeneratorService {
             
             // Create headers with JWT token
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + JWT_TOKEN);
+//            headers.set("Authorization", "Bearer " + JWT_TOKEN);
             headers.set("Content-Type", "application/json");
             
             // Create HTTP entity with headers and body
             HttpEntity<List<ExchangeRateDto>> requestEntity = new HttpEntity<>(rates, headers);
             
             // Send to exchange service with token
-            String exchangeServiceUrl = "lb://exchange-service/exchange/course/update";
+            String exchangeServiceUrl = "lb://api-gateway/exchange/course/update";
             ResponseEntity<Object> response = restTemplate.exchange(
                 exchangeServiceUrl, 
                 HttpMethod.POST, 
