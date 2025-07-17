@@ -1,29 +1,67 @@
 spring:
   cloud:
     gateway:
-      server:
-        webflux:
-          locator:
-            enabled: true
-            lowerCaseServiceId: true
-          routes:
-            - id: accounts-service
-              uri: lb://accounts-service      # адрес user сервиса
-              predicates:
-                - Path=/api/hello          # перехватываем путь /api/hello
-              filters:
-                - TokenRelay=gateway-client # use clientRegistrationId
-  #      discovery:
-  #        locator:
-  #          enabled: true
-  #          lowerCaseServiceId: true
-  #      routes:
-  #        - id: accounts-service
-  #          uri: lb://accounts-service      # адрес user сервиса
-  #          predicates:
-  #            - Path=/api/hello          # перехватываем путь /api/hello
-  #          filters:
-  #            - TokenRelay=gateway-client # use clientRegistrationId
+      routes:
+        # Accounts Service
+        - id: accounts-service
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/accounts/**, /accounts/**
+          metadata:
+            service-name: accounts-service
+            
+        # Users Service (example - adjust URI as needed)
+        - id: users-service
+          uri: http://localhost:8092
+          predicates:
+            - Path=/api/users/**, /users/**
+          metadata:
+            service-name: users-service
+            
+        # Transactions Service (example - adjust URI as needed)
+        - id: transactions-service
+          uri: http://localhost:8093
+          predicates:
+            - Path=/api/transactions/**, /transactions/**
+          metadata:
+            service-name: transactions-service
+            
+        # Notifications Service (example - adjust URI as needed)
+        - id: notifications-service
+          uri: http://localhost:8094
+          predicates:
+            - Path=/api/notifications/**, /notifications/**
+          metadata:
+            service-name: notifications-service
+            
+        # General API route for backward compatibility
+        - id: general-api
+          uri: http://localhost:8091
+          predicates:
+            - Path=/api/**
+          metadata:
+            service-name: general-api
+            
+        # Health check and actuator endpoints (no auth required)
+        - id: health-endpoints
+          uri: http://localhost:8091
+          predicates:
+            - Path=/health, /actuator/**
+          metadata:
+            service-name: health-endpoints
+            skip-auth: true
+
+#      discovery:
+#        locator:
+#          enabled: true
+#          lowerCaseServiceId: true
+#      routes:
+#        - id: accounts-service
+#          uri: lb://accounts-service      # адрес user сервиса
+#          predicates:
+#            - Path=/api/hello          # перехватываем путь /api/hello
+#          filters:
+#            - TokenRelay=gateway-client # use clientRegistrationId
   security:
     oauth2:
       client:
@@ -38,26 +76,42 @@ spring:
           gateway-client:
             provider: keycloak
             client-id: gateway
-            client-secret: 5FsSSywj2svgdUdvQhTOTa5QVF3UY52J
-            scope: openid,profile,email
-            authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-secret: DOh7wYosZk3mneOFOm2NGefWk5IzbVyi
+            scope: resource.read
+            authorization-grant-type: client_credentials
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/bankrealm
-#  security:
-#    oauth2:
-#      client:
-#        provider:
-#          keycloak:
-#            token-uri: http://localhost:8080/realms/bankrealm/protocol/openid-connect/token
-#        registration:
-#          gateway-client: # clientRegistrationId
-#            provider: keycloak
-#            client-id: gateway
-#            client-secret: 5FsSSywj2svgdUdvQhTOTa5QVF3UY52J
-#            scope: resource.read
-#            authorization-grant-type: client_credentials
+
+# Gateway authentication configuration
+gateway:
+  auth:
+    # Service path mappings to OAuth2 client registration IDs
+    service-client-mappings:
+      "/api/accounts/": "gateway-client"
+      "/accounts/": "gateway-client"
+      "/api/users/": "gateway-client"
+      "/users/": "gateway-client"
+      "/api/transactions/": "gateway-client"
+      "/transactions/": "gateway-client"
+      "/api/notifications/": "gateway-client"
+      "/notifications/": "gateway-client"
+      # You can add different clients for different services
+      # "/api/admin/": "admin-gateway-client"
+      # "/api/internal/": "internal-gateway-client"
+    
+    # Paths that should skip authentication entirely
+    skip-auth-paths:
+      - "/auth/"
+      - "/public/"
+      - "/actuator/"
+      - "/health"
+      - "/info"
+      - "/swagger-ui/"
+      - "/v3/api-docs/"
+    
+    # Default OAuth2 client registration ID for API paths without specific mapping
+    default-client-registration-id: "gateway-client"
 
 eureka:
   client:

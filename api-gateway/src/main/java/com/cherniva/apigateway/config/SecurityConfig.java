@@ -37,13 +37,7 @@ public class SecurityConfig {
         http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/swagger-ui/**", "/v3/api-docs*/**").permitAll()
-                        .pathMatchers("/actuator/**", "/fallback/**").permitAll()
-                        .anyExchange().authenticated()
-                )
-                .oauth2Login(withDefaults())
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .anyExchange().permitAll()
                 );
         return http.build();
     }

@@ -9,3 +9,7 @@ spring:
 logging:
   level:
     org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: DEBUG
