@@ -4,52 +4,62 @@ spring:
       routes:
         # Accounts Service
         - id: accounts-service
-          uri: http://localhost:8091
+          uri: lb://accounts-service
           predicates:
-            - Path=/api/accounts/**, /accounts/**
+            - Path=/api/hello
           metadata:
             service-name: accounts-service
-            
-        # Users Service (example - adjust URI as needed)
-        - id: users-service
-          uri: http://localhost:8092
+
+        - id: blocker-service
+          uri: lb://blocker-service
           predicates:
             - Path=/api/users/**, /users/**
           metadata:
-            service-name: users-service
-            
-        # Transactions Service (example - adjust URI as needed)
-        - id: transactions-service
-          uri: http://localhost:8093
+            service-name: blocker-service
+
+        - id: cash-service
+          uri: lb://cash-service
           predicates:
             - Path=/api/transactions/**, /transactions/**
           metadata:
-            service-name: transactions-service
+            service-name: cash-service
             
         # Notifications Service (example - adjust URI as needed)
+        - id: exchange-generator-service
+          uri: lb://exchange-generator-service
+          predicates:
+            - Path=/api/notifications/**, /notifications/**
+          metadata:
+            service-name: exchange-generator-service
+            
+        # General API route for backward compatibility
+#        - id: general-api
+#          uri: http://localhost:8091
+#          predicates:
+#            - Path=/api/**
+#          metadata:
+#            service-name: general-api
+
+        - id: exchange-service
+          uri: lb://exchange-service
+          predicates:
+            - Path=/api/notifications/**, /notifications/**
+          metadata:
+            service-name: exchange-service
+
         - id: notifications-service
-          uri: http://localhost:8094
+          uri: lb://notifications-service
           predicates:
             - Path=/api/notifications/**, /notifications/**
           metadata:
             service-name: notifications-service
-            
-        # General API route for backward compatibility
-        - id: general-api
-          uri: http://localhost:8091
+
+        - id: transfer-service
+          uri: lb://transfer-service
           predicates:
-            - Path=/api/**
+            - Path=/api/notifications/**, /notifications/**
           metadata:
-            service-name: general-api
-            
-        # Health check and actuator endpoints (no auth required)
-        - id: health-endpoints
-          uri: http://localhost:8091
-          predicates:
-            - Path=/health, /actuator/**
-          metadata:
-            service-name: health-endpoints
-            skip-auth: true
+            service-name: transfer-service
 
 #      discovery:
 #        locator:
