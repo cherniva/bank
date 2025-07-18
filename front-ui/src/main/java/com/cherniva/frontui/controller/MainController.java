@@ -2,12 +2,14 @@ package com.cherniva.frontui.controller;
 
 import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.SessionValidationDto;
+import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.frontui.service.EditPasswordService;
 import com.cherniva.frontui.service.SessionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,9 +17,11 @@ import java.util.Objects;
 
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class MainController {
 
     private final SessionService sessionService;
+    private final EditPasswordService editPasswordService;
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
@@ -33,6 +37,35 @@ public class MainController {
         // User is not authenticated
         model.addAttribute("authenticated", false);
         return "redirect:/login";
+    }
+
+    @PostMapping("/user/editPassword")
+    public String editPassword(@CookieValue(value = "sessionId", required = false) String sessionId,
+                               @RequestParam String password, @RequestParam String confirmPassword, Model model) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (!password.equals(confirmPassword)) {
+                populateModelWithUserData(model, sessionValidation);
+                model.addAttribute("error", "Passwords do not match");
+                return "main";
+            }
+
+            if (password == null || password.length() < 6) {
+                populateModelWithUserData(model, sessionValidation);
+                model.addAttribute("error", "Password must be at least 6 characters long");
+                return "main";
+            }
+
+            if (sessionValidation.isValid()) {
+                UserAccountResponseDto userAccountResponseDto = editPasswordService.editPassword(sessionId, password);
+                log.info("Updated user: {}", userAccountResponseDto);
+                sessionService.logout(sessionId);
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
+
     }
     
     private void populateModelWithUserData(Model model, SessionValidationDto sessionValidation) {

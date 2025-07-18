@@ -1,5 +1,6 @@
 package com.cherniva.accountsservice.controller;
 
+import com.cherniva.accountsservice.service.SessionService;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.common.mapper.UserMapper;
@@ -20,6 +21,7 @@ public class AccountsController {
     private final UserMapper userMapper;
     private final UserDetailsRepo userDetailsRepo;
     private final PasswordEncoder passwordEncoder;
+    private final SessionService sessionService;
 
     @GetMapping("/hello")
     public String hello() {
@@ -34,6 +36,22 @@ public class AccountsController {
             UserDetails savedUser = userDetailsRepo.save(userDetails);
             UserAccountResponseDto userAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
             return ResponseEntity.ok(userAccountResponseDto);
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/editPassword")
+    public ResponseEntity<UserAccountResponseDto> editPassword(@RequestParam String sessionId, @RequestParam String password) {
+        try {
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElseThrow();
+            userDetails.setPassword(passwordEncoder.encode(password));
+            UserDetails savedUser = userDetailsRepo.save(userDetails);
+            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
+            sessionService.removeSession(sessionId);
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
             log.error("", e);
             return ResponseEntity.badRequest().build();
