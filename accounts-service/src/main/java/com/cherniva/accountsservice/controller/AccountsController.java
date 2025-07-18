@@ -57,4 +57,18 @@ public class AccountsController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Void> deleteUser(@RequestParam String sessionId) {
+        try {
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElseThrow();
+            userDetailsRepo.delete(userDetails);
+            sessionService.removeSession(sessionId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

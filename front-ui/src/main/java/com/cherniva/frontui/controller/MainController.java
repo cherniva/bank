@@ -3,6 +3,7 @@ package com.cherniva.frontui.controller;
 import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.SessionValidationDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.frontui.service.DeleteUserService;
 import com.cherniva.frontui.service.EditPasswordService;
 import com.cherniva.frontui.service.SessionService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +24,7 @@ public class MainController {
 
     private final SessionService sessionService;
     private final EditPasswordService editPasswordService;
+    private final DeleteUserService deleteUserService;
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
@@ -47,13 +50,13 @@ public class MainController {
 
             if (!password.equals(confirmPassword)) {
                 populateModelWithUserData(model, sessionValidation);
-                model.addAttribute("error", "Passwords do not match");
+                model.addAttribute("passwordErrors", List.of("Passwords do not match"));
                 return "main";
             }
 
             if (password == null || password.length() < 6) {
                 populateModelWithUserData(model, sessionValidation);
-                model.addAttribute("error", "Password must be at least 6 characters long");
+                model.addAttribute("passwordErrors", List.of("Password must be at least 6 characters long"));
                 return "main";
             }
 
@@ -65,7 +68,31 @@ public class MainController {
         }
         model.addAttribute("authenticated", false);
         return "redirect:/login";
+    }
 
+    @PostMapping("/user/deleteAccount")
+    public String deleteAccount(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                var accounts = sessionValidation.getAccounts();
+                if (accounts != null && !accounts.isEmpty()) {
+                    for (var account : accounts) {
+                        if (account.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                            populateModelWithUserData(model, sessionValidation);
+                            model.addAttribute("deletionErrors", List.of("Невозможно удалить аккаунт с ненулевыми счетами"));
+                            return "main";
+                        }
+                    }
+                }
+                UserAccountResponseDto userAccountResponseDto = sessionValidation.getUserData();
+                deleteUserService.deleteUser(sessionId);
+                log.info("Delete user: {}", userAccountResponseDto);
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
     }
     
     private void populateModelWithUserData(Model model, SessionValidationDto sessionValidation) {
