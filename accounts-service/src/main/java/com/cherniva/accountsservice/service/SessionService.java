@@ -1,5 +1,6 @@
 package com.cherniva.accountsservice.service;
 
+import com.cherniva.common.dto.UserAccountResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,13 @@ public class SessionService {
     public String createSession(String username, Long userId) {
         String sessionId = UUID.randomUUID().toString();
         SessionInfo sessionInfo = new SessionInfo(username, userId, System.currentTimeMillis());
+        sessions.put(sessionId, sessionInfo);
+        return sessionId;
+    }
+    
+    public String createSession(UserAccountResponseDto userData) {
+        String sessionId = UUID.randomUUID().toString();
+        SessionInfo sessionInfo = new SessionInfo(userData, System.currentTimeMillis());
         sessions.put(sessionId, sessionInfo);
         return sessionId;
     }
@@ -45,11 +53,22 @@ public class SessionService {
     public static class SessionInfo {
         private final String username;
         private final Long userId;
+        private final UserAccountResponseDto userData;
         private final long createdAt;
         
+        // Constructor for backward compatibility
         public SessionInfo(String username, Long userId, long createdAt) {
             this.username = username;
             this.userId = userId;
+            this.userData = null;
+            this.createdAt = createdAt;
+        }
+        
+        // Constructor with complete user data
+        public SessionInfo(UserAccountResponseDto userData, long createdAt) {
+            this.username = userData.getUsername();
+            this.userId = userData.getUserId();
+            this.userData = userData;
             this.createdAt = createdAt;
         }
         
@@ -61,8 +80,29 @@ public class SessionService {
             return userId;
         }
         
+        public UserAccountResponseDto getUserData() {
+            return userData;
+        }
+        
         public long getCreatedAt() {
             return createdAt;
+        }
+        
+        // Convenience methods for backward compatibility
+        public String getName() {
+            return userData != null ? userData.getName() : null;
+        }
+        
+        public String getSurname() {
+            return userData != null ? userData.getSurname() : null;
+        }
+        
+        public java.time.LocalDate getBirthday() {
+            return userData != null ? userData.getBirthday() : null;
+        }
+        
+        public java.util.List<com.cherniva.common.dto.AccountDto> getAccounts() {
+            return userData != null ? userData.getAccounts() : null;
         }
     }
 } 

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.cherniva.common.dto.UserAccountResponseDto;
 
 @Controller
 @RequiredArgsConstructor
@@ -44,25 +45,38 @@ public class MainController {
         model.addAttribute("userId", sessionValidation.getUserId());
         model.addAttribute("authenticated", true);
         
-        // Mock user data for demonstration (in real app, fetch from accounts-service)
-        model.addAttribute("name", "Иван Иванов"); // Mock name
-        model.addAttribute("birthdate", "1990-01-01"); // Mock birthdate
+        // Real user data from session
+        model.addAttribute("name", getFullName(sessionValidation));
+        model.addAttribute("birthdate", sessionValidation.getBirthday() != null ? 
+            sessionValidation.getBirthday().toString() : "N/A");
         
-        // Mock accounts data
+        // Real accounts data from session
         List<MockAccount> accounts = new ArrayList<>();
-        accounts.add(new MockAccount("USD", "Доллар США", 1000.0, true));
-        accounts.add(new MockAccount("EUR", "Евро", 500.0, true));
-        accounts.add(new MockAccount("RUB", "Рубль", 50000.0, true));
+        if (sessionValidation.getAccounts() != null && !sessionValidation.getAccounts().isEmpty()) {
+            for (com.cherniva.common.dto.AccountDto accountDto : sessionValidation.getAccounts()) {
+                accounts.add(new MockAccount(
+                    accountDto.getCurrencyCode(), 
+                    accountDto.getCurrencyName(), 
+                    0.0, // Balance would need to be fetched from accounts service
+                    true
+                ));
+            }
+        } else {
+            // Fallback to mock accounts if no real accounts exist
+            accounts.add(new MockAccount("USD", "Доллар США", -1, true));
+            accounts.add(new MockAccount("EUR", "Евро", -1, true));
+            accounts.add(new MockAccount("RUB", "Рубль", -1, true));
+        }
         model.addAttribute("accounts", accounts);
         
-        // Mock currencies for dropdowns
+        // Mock currencies for dropdowns (this could be fetched from a service)
         List<MockCurrency> currencies = new ArrayList<>();
         currencies.add(new MockCurrency("USD", "Доллар США"));
         currencies.add(new MockCurrency("EUR", "Евро"));
         currencies.add(new MockCurrency("RUB", "Рубль"));
         model.addAttribute("currency", currencies);
         
-        // Mock users for transfer dropdown
+        // Mock users for transfer dropdown (this could be fetched from a service)
         List<MockUser> users = new ArrayList<>();
         users.add(new MockUser("john.doe", "Джон Доу"));
         users.add(new MockUser("jane.smith", "Джейн Смит"));
@@ -74,6 +88,18 @@ public class MainController {
         model.addAttribute("cashErrors", null);
         model.addAttribute("transferErrors", null);
         model.addAttribute("transferOtherErrors", null);
+    }
+    
+    private String getFullName(SessionValidationDto sessionValidation) {
+        if (sessionValidation.getName() != null && sessionValidation.getSurname() != null) {
+            return sessionValidation.getName() + " " + sessionValidation.getSurname();
+        } else if (sessionValidation.getName() != null) {
+            return sessionValidation.getName();
+        } else if (sessionValidation.getSurname() != null) {
+            return sessionValidation.getSurname();
+        } else {
+            return sessionValidation.getUsername(); // Fallback to username
+        }
     }
     
     // Mock classes for demonstration

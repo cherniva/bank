@@ -33,7 +33,7 @@ public class SessionService {
     public void logout(String sessionId) {
         try {
             restTemplate.postForObject(
-                "http://" + accountsServiceName + "/api/auth/logout?sessionId=" + sessionId,
+                "lb://api-gateway/api/auth/logout?sessionId=" + sessionId,
                 null,
                 Void.class
             );

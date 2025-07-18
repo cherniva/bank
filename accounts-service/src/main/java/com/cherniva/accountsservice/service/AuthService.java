@@ -32,11 +32,12 @@ public class AuthService {
             throw new RuntimeException("Invalid password");
         }
         
-        // Create session
-        String sessionId = sessionService.createSession(userDetails.getUsername(), userDetails.getId());
-        
+        // Create UserAccountResponseDto first
         UserAccountResponseDto response = userAccountMapper.userToUserAccountResponse(userDetails);
-        response.setSessionId(sessionId); // You'll need to add this field to UserAccountResponseDto
+        
+        // Create session with complete user data
+        String sessionId = sessionService.createSession(response);
+        response.setSessionId(sessionId);
         
         return response;
     }

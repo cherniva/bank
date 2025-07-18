@@ -20,7 +20,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<UserAccountResponseDto> login(@RequestBody UserLoginDto loginDto) {
-        System.out.println("Here");
         try {
             UserAccountResponseDto response = authService.authenticateUser(loginDto);
             return ResponseEntity.ok(response);
@@ -38,8 +37,7 @@ public class AuthController {
         
         if (sessionInfo != null) {
             response.setValid(true);
-            response.setUsername(sessionInfo.getUsername());
-            response.setUserId(sessionInfo.getUserId());
+            response.setUserData(sessionInfo.getUserData());
         } else {
             response.setValid(false);
         }

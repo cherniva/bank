@@ -36,11 +36,11 @@ public class DataInitializer implements CommandLineRunner {
 
         // Create user
         UserDetails user = new UserDetails();
-        user.setUsername("john.doe");
-        user.setPassword(passwordEncoder.encode("password123"));
+        user.setUsername("1");
+        user.setPassword(passwordEncoder.encode("1"));
         user.setName("John");
         user.setSurname("Doe");
-        user.setBirthday(LocalDate.of(1990, 1, 1));
+        user.setBirthday(LocalDate.of(1990, 12, 13));
 
         // Create accounts
         Account account1 = new Account();
@@ -55,6 +55,6 @@ public class DataInitializer implements CommandLineRunner {
         userDetailsRepo.save(user);
 
         System.out.println("Sample data initialized!");
-        System.out.println("Username: john.doe, Password: password123");
+        System.out.println("Username: 1, Password: 1");
     }
 } 
