@@ -26,7 +26,7 @@ public class SessionValidationDto {
     }
     
     public java.time.LocalDate getBirthday() {
-        return userData != null ? userData.getBirthday() : null;
+        return userData != null ? userData.getBirthdate() : null;
     }
     
     public java.util.List<AccountDto> getAccounts() {

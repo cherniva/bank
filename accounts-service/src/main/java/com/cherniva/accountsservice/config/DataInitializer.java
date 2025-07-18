@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
         user.setPassword(passwordEncoder.encode("1"));
         user.setName("John");
         user.setSurname("Doe");
-        user.setBirthday(LocalDate.of(1990, 12, 13));
+        user.setBirthdate(LocalDate.of(1990, 12, 13));
 
         // Create accounts
         Account account1 = new Account();

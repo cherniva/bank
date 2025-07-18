@@ -2,8 +2,11 @@ package com.cherniva.frontui.controller;
 
 import com.cherniva.common.dto.UserLoginDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.frontui.service.AuthService;
+import com.cherniva.frontui.service.SignupService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,12 +17,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.time.LocalDate;
+
 @Controller
 @RequestMapping("/signup")
 @RequiredArgsConstructor
+@Slf4j
 public class SignupController {
     
-    private final AuthService authService;
+    private final SignupService signupService;
     
     @GetMapping
     public String getSignup(@RequestParam(value = "error", required = false) String error, Model model) {
@@ -54,10 +60,18 @@ public class SignupController {
             model.addAttribute("error", "Password must be at least 6 characters long");
             return "signup";
         }
+
+        UserRegistrationDto userRegistrationDto = new UserRegistrationDto();
+        userRegistrationDto.setUsername(username);
+        userRegistrationDto.setPassword(password);
+        userRegistrationDto.setName(name);
+        userRegistrationDto.setSurname(surname);
+        userRegistrationDto.setBirthdate(LocalDate.parse(birthdate));
+        log.info("UserRegistrationDto: {}", userRegistrationDto);
         
         try {
-            // For now, we'll just redirect to login since we don't have a registration endpoint
-            // In a real application, you would call a registration service
+            UserAccountResponseDto userAccountResponseDto = signupService.registerUser(userRegistrationDto);
+            log.info("Register user successfully: {}", userAccountResponseDto);
             model.addAttribute("success", "Registration successful! Please login.");
             return "redirect:/login?success=true";
             

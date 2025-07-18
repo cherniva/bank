@@ -1,16 +1,42 @@
 package com.cherniva.accountsservice.controller;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.common.dto.UserRegistrationDto;
+import com.cherniva.common.mapper.UserDetailsMapper;
+import com.cherniva.common.model.UserDetails;
+import com.cherniva.common.repo.UserDetailsRepo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/accounts")
+@RequiredArgsConstructor
+@Slf4j
 public class AccountsController {
+    private final UserDetailsMapper userDetailsMapper;
+    private final UserDetailsRepo userDetailsRepo;
+    private final PasswordEncoder passwordEncoder;
+
     @GetMapping("/hello")
     public String hello() {
         return "Hello other service";
     }
 
-
+    @PostMapping("/register")
+    public ResponseEntity<UserAccountResponseDto> registerUser(@RequestBody UserRegistrationDto userRegistrationDto) {
+        try {
+            UserDetails userDetails = userDetailsMapper.userRegistrationToUser(userRegistrationDto);
+            userDetails.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+            UserDetails savedUser = userDetailsRepo.save(userDetails);
+            UserAccountResponseDto userAccountResponseDto = userDetailsMapper.userToUserAccountResponse(savedUser);
+            return ResponseEntity.ok(userAccountResponseDto);
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

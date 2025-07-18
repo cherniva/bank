@@ -17,7 +17,7 @@ public class UserDetails {
     private String password;
     private String name;
     private String surname;
-    private LocalDate birthday;
+    private LocalDate birthdate;
     @OneToMany(mappedBy = "userDetails", cascade = CascadeType.ALL)
     private List<Account> accounts = new ArrayList<>();
 }

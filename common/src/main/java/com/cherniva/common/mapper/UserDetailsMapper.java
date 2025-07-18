@@ -1,5 +1,6 @@
 package com.cherniva.common.mapper;
 
+import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.common.model.UserDetails;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import org.mapstruct.Mapper;
@@ -18,4 +19,6 @@ public interface UserDetailsMapper {
     @Mapping(source = "userId", target = "id")
     @Mapping(source = "accounts", target = "accounts")
     UserDetails userAccountResponseToUser(UserAccountResponseDto dto);
+
+    UserDetails userRegistrationToUser(UserRegistrationDto dto);
 } 
