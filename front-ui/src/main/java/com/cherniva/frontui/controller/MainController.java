@@ -1,5 +1,6 @@
 package com.cherniva.frontui.controller;
 
+import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.SessionValidationDto;
 import com.cherniva.frontui.service.SessionService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.cherniva.common.dto.UserAccountResponseDto;
+import java.util.Objects;
 
 @Controller
 @RequiredArgsConstructor
@@ -28,11 +29,6 @@ public class MainController {
                 return "main";
             }
         }
-//        SessionValidationDto sessionValidation = new SessionValidationDto();
-//        sessionValidation.setUsername("admin");
-//        sessionValidation.setUserId(1L);
-//        populateModelWithUserData(model, sessionValidation);
-//        return "main";
 
         // User is not authenticated
         model.addAttribute("authenticated", false);
@@ -51,23 +47,8 @@ public class MainController {
             sessionValidation.getBirthday().toString() : "N/A");
         
         // Real accounts data from session
-        List<MockAccount> accounts = new ArrayList<>();
-        if (sessionValidation.getAccounts() != null && !sessionValidation.getAccounts().isEmpty()) {
-            for (com.cherniva.common.dto.AccountDto accountDto : sessionValidation.getAccounts()) {
-                accounts.add(new MockAccount(
-                    accountDto.getCurrencyCode(), 
-                    accountDto.getCurrencyName(), 
-                    0.0, // Balance would need to be fetched from accounts service
-                    true
-                ));
-            }
-        } else {
-            // Fallback to mock accounts if no real accounts exist
-            accounts.add(new MockAccount("USD", "Доллар США", -1, true));
-            accounts.add(new MockAccount("EUR", "Евро", -1, true));
-            accounts.add(new MockAccount("RUB", "Рубль", -1, true));
-        }
-        model.addAttribute("accounts", accounts);
+        List<AccountDto> accounts = sessionValidation.getAccounts();
+        model.addAttribute("accounts", Objects.requireNonNullElseGet(accounts, () -> new ArrayList<AccountDto>()));
         
         // Mock currencies for dropdowns (this could be fetched from a service)
         List<MockCurrency> currencies = new ArrayList<>();
@@ -102,52 +83,21 @@ public class MainController {
         }
     }
     
-    // Mock classes for demonstration
-    public static class MockAccount {
-        private String currencyCode;
-        private String currencyTitle;
-        private double value;
-        private boolean exists;
-        
-        public MockAccount(String currencyCode, String currencyTitle, double value, boolean exists) {
-            this.currencyCode = currencyCode;
-            this.currencyTitle = currencyTitle;
-            this.value = value;
-            this.exists = exists;
-        }
-        
-        public MockCurrency getCurrency() {
-            return new MockCurrency(currencyCode, currencyTitle);
-        }
-        
-        public double getValue() {
-            return value;
-        }
-        
-        public boolean getExists() {
-            return exists;
-        }
-
-        public boolean exists() {
-            return exists;
-        }
-    }
-    
     public static class MockCurrency {
+        private String code;
         private String name;
-        private String title;
         
-        public MockCurrency(String name, String title) {
+        public MockCurrency(String code, String name) {
+            this.code = code;
             this.name = name;
-            this.title = title;
+        }
+        
+        public String getCode() {
+            return code;
         }
         
         public String getName() {
             return name;
-        }
-        
-        public String getTitle() {
-            return title;
         }
     }
     

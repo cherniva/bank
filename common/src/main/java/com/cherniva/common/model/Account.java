@@ -3,6 +3,8 @@ package com.cherniva.common.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Entity
 @Data
 public class Account {
@@ -15,4 +17,6 @@ public class Account {
     @ManyToOne
     @JoinColumn(name = "currency_id")
     private Currency currency;
+    private BigDecimal amount;
+    private boolean active = true;
 }

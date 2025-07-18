@@ -2,7 +2,7 @@ package com.cherniva.accountsservice.controller;
 
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserRegistrationDto;
-import com.cherniva.common.mapper.UserDetailsMapper;
+import com.cherniva.common.mapper.UserMapper;
 import com.cherniva.common.model.UserDetails;
 import com.cherniva.common.repo.UserDetailsRepo;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 public class AccountsController {
-    private final UserDetailsMapper userDetailsMapper;
+    private final UserMapper userMapper;
     private final UserDetailsRepo userDetailsRepo;
     private final PasswordEncoder passwordEncoder;
 
@@ -29,10 +29,10 @@ public class AccountsController {
     @PostMapping("/register")
     public ResponseEntity<UserAccountResponseDto> registerUser(@RequestBody UserRegistrationDto userRegistrationDto) {
         try {
-            UserDetails userDetails = userDetailsMapper.userRegistrationToUser(userRegistrationDto);
+            UserDetails userDetails = userMapper.userRegistrationToUser(userRegistrationDto);
             userDetails.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             UserDetails savedUser = userDetailsRepo.save(userDetails);
-            UserAccountResponseDto userAccountResponseDto = userDetailsMapper.userToUserAccountResponse(savedUser);
+            UserAccountResponseDto userAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
             return ResponseEntity.ok(userAccountResponseDto);
         } catch (Exception e) {
             log.error("", e);

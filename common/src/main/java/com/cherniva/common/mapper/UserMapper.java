@@ -2,6 +2,7 @@ package com.cherniva.common.mapper;
 
 import com.cherniva.common.model.UserDetails;
 import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.common.dto.UserRegistrationDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -10,9 +11,9 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 
 @Mapper(componentModel = "spring", uses = {AccountMapper.class})
-public interface UserAccountMapper {
+public interface UserMapper {
 
-    UserAccountMapper INSTANCE = Mappers.getMapper(UserAccountMapper.class);
+    UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
     @Mapping(source = "id", target = "userId")
     @Mapping(source = "accounts", target = "accounts")
@@ -22,6 +23,9 @@ public interface UserAccountMapper {
     @Mapping(source = "userId", target = "id")
     @Mapping(source = "accounts", target = "accounts")
     UserDetails userAccountResponseToUser(UserAccountResponseDto dto);
+
+    // Registration mapping
+    UserDetails userRegistrationToUser(UserRegistrationDto dto);
 
     // Custom mapping method for name formatting
     @Named("capitalizeName")

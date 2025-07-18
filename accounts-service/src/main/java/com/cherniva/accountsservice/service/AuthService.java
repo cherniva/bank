@@ -4,7 +4,7 @@ import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserLoginDto;
 import com.cherniva.common.model.UserDetails;
 import com.cherniva.common.repo.UserDetailsRepo;
-import com.cherniva.common.mapper.UserAccountMapper;
+import com.cherniva.common.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class AuthService {
     private final UserDetailsRepo userDetailsRepo;
     private final PasswordEncoder passwordEncoder;
-    private final UserAccountMapper userAccountMapper;
+    private final UserMapper userMapper;
     private final SessionService sessionService;
 
     public UserAccountResponseDto authenticateUser(UserLoginDto userLoginDto) {
@@ -33,7 +33,7 @@ public class AuthService {
         }
         
         // Create UserAccountResponseDto first
-        UserAccountResponseDto response = userAccountMapper.userToUserAccountResponse(userDetails);
+        UserAccountResponseDto response = userMapper.userToUserAccountResponse(userDetails);
         
         // Create session with complete user data
         String sessionId = sessionService.createSession(response);
