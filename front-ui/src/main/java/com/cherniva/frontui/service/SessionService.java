@@ -18,7 +18,7 @@ public class SessionService {
     public SessionValidationDto validateSession(String sessionId) {
         try {
             return restTemplate.postForObject(
-                "http://" + accountsServiceName + "/api/auth/validate-session?sessionId=" + sessionId,
+                "lb://api-gateway/api/auth/validate-session?sessionId=" + sessionId,
                 null,
                 SessionValidationDto.class
             );

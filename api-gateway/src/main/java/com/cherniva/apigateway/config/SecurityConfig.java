@@ -11,26 +11,9 @@ import org.springframework.security.oauth2.server.resource.authentication.Reacti
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import reactor.core.publisher.Mono;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfig {
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .cors(withDefaults())
-//                .csrf(withDefaults())
-//                .authorizeHttpRequests(exchanges -> exchanges
-//                        .requestMatchers("/login", "/actuator/**").permitAll()
-//                        .anyRequest().authenticated()
-//                )
-//            .oauth2Login(withDefaults())
-//            .oauth2ResourceServer(oauth2 -> oauth2.jwt(withDefaults()));
-//
-//        return http.build();
-//    }
     
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {

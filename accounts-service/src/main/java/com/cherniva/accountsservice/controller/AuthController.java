@@ -20,6 +20,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<UserAccountResponseDto> login(@RequestBody UserLoginDto loginDto) {
+        System.out.println("Here");
         try {
             UserAccountResponseDto response = authService.authenticateUser(loginDto);
             return ResponseEntity.ok(response);

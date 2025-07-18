@@ -33,8 +33,9 @@ public class OAuth2GlobalFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
         
-        // Check if this request should use client credentials flow
-        String clientRegistrationId = getClientRegistrationId(path);
+//        // Check if this request should use client credentials flow
+//        String clientRegistrationId = getClientRegistrationId(path);
+        String clientRegistrationId = "gateway-client"; // use defaul
         if (clientRegistrationId != null) {
             OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
                     .withClientRegistrationId(clientRegistrationId)

@@ -19,23 +19,23 @@ public class MainController {
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
-//        if (sessionId != null) {
-//            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
-//
-//            if (sessionValidation.isValid()) {
-//                populateModelWithUserData(model, sessionValidation);
-//                return "main";
-//            }
-//        }
-        SessionValidationDto sessionValidation = new SessionValidationDto();
-        sessionValidation.setUsername("admin");
-        sessionValidation.setUserId(1L);
-        populateModelWithUserData(model, sessionValidation);
-        return "main";
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                populateModelWithUserData(model, sessionValidation);
+                return "main";
+            }
+        }
+//        SessionValidationDto sessionValidation = new SessionValidationDto();
+//        sessionValidation.setUsername("admin");
+//        sessionValidation.setUserId(1L);
+//        populateModelWithUserData(model, sessionValidation);
+//        return "main";
 
         // User is not authenticated
-//        model.addAttribute("authenticated", false);
-//        return "redirect:/login";
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
     }
     
     private void populateModelWithUserData(Model model, SessionValidationDto sessionValidation) {
