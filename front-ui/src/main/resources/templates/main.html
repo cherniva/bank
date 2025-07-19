@@ -3,30 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <title>Главная страница</title>
-    <!-- Exchange rates functionality - commented out until implemented
     <script language="JavaScript">
+        // Debug mode - set to true to see more detailed logs
+        var DEBUG_MODE = false;
+        
+        function log(message, data) {
+            if (DEBUG_MODE) {
+                console.log(message, data);
+            }
+        }
+        
         setInterval(() => {
             var td = document.getElementById('exchange_rates');
-            fetch('http://localhost:8080/api/rates')
-                .then(response => response.json())
-                .then(json => {
-                    var table = '<table style="width:100%;margin-left:auto;margin-right:auto;border-radius:2%;padding:10px;background-color:whitesmoke;">';
-                    table += '<tr><th colspan="3">Курсы валют по отношению к рублю</th></tr>';
-                    table += '<tr><th>Валюта</th><th>Обозначение</th><th>Курс</th></tr>';
-                    json.forEach(rate => {
+            log('Fetching exchange rates from:', 'http://localhost:9001/exchange/course');
+            
+            fetch('http://localhost:9001/exchange/course')
+                .then(response => {
+                    // Log response details for debugging
+                    log('Response status:', response.status);
+                    log('Response headers:', response.headers);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Log the response data for debugging
+                    log('Exchange rates response:', data);
+                    
+                    // Check if the response is successful and contains rates
+                    if (!data.success || !data.rates || data.rates.length === 0) {
+                        var message = data.message || 'Нет данных о курсах валют';
+                        console.warn('No exchange rates data:', message);
+                        td.innerHTML = '<p style="color:orange;text-align:center;">' + message + '</p>';
+                        return;
+                    }
+                    
+                    var table = '<table style="width:100%;margin-left:auto;margin-right:auto;border-radius:2%;padding:10px;background-color:whitesmoke;border-collapse:collapse;">';
+                    table += '<tr><th colspan="4" style="text-align:center;padding:10px;border:1px solid #ddd;background-color:#f2f2f2;">Курсы валют</th></tr>';
+                    table += '<tr><th style="text-align:center;padding:8px;border:1px solid #ddd;background-color:#f2f2f2;">Из валюты</th><th style="text-align:center;padding:8px;border:1px solid #ddd;background-color:#f2f2f2;">В валюту</th><th style="text-align:center;padding:8px;border:1px solid #ddd;background-color:#f2f2f2;">Курс покупки</th><th style="text-align:center;padding:8px;border:1px solid #ddd;background-color:#f2f2f2;">Курс продажи</th></tr>';
+                    
+                    data.rates.forEach(rate => {
                         table += '<tr>';
-                        table += '<td>' + rate.title + '</td>';
-                        table += '<td>' + rate.name + '</td>';
-                        table += '<td>' + rate.value + '</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + rate.fromCurrency + '</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + rate.toCurrency + '</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + rate.buyRate + '</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + rate.sellRate + '</td>';
                         table += '</tr>';
                     });
+                    
+                    // Add calculated cross-rates through RUB
+                    var rubUsdRate = data.rates.find(rate => rate.fromCurrency === 'RUB' && rate.toCurrency === 'USD');
+                    var rubCnyRate = data.rates.find(rate => rate.fromCurrency === 'RUB' && rate.toCurrency === 'CNY');
+                    
+                    if (rubUsdRate && rubCnyRate) {
+                        // Calculate USD -> CNY through RUB
+                        // USD -> RUB -> CNY: (1 / USD buy rate) * CNY buy rate
+                        var usdToCnyBuyRate = (1 / rubUsdRate.buyRate) * rubCnyRate.buyRate;
+                        var usdToCnySellRate = (1 / rubUsdRate.sellRate) * rubCnyRate.sellRate;
+                        
+                        table += '<tr>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">USD</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">CNY</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + usdToCnyBuyRate.toFixed(4) + '</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + usdToCnySellRate.toFixed(4) + '</td>';
+                        table += '</tr>';
+                        
+                        // Calculate CNY -> USD through RUB
+                        // CNY -> RUB -> USD: (1 / CNY buy rate) * USD buy rate
+                        var cnyToUsdBuyRate = (1 / rubCnyRate.buyRate) * rubUsdRate.buyRate;
+                        var cnyToUsdSellRate = (1 / rubCnyRate.sellRate) * rubUsdRate.sellRate;
+                        
+                        table += '<tr>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">CNY</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">USD</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + cnyToUsdBuyRate.toFixed(4) + '</td>';
+                        table += '<td style="text-align:center;padding:8px;border:1px solid #ddd;">' + cnyToUsdSellRate.toFixed(4) + '</td>';
+                        table += '</tr>';
+                    }
                     table += '</table>';
                     td.innerHTML = table;
                 })
-                .catch(error => td.innerHTML = 'Ошибка при получении данных курсов валют');
+                .catch(error => {
+                    console.error('Error fetching exchange rates:', error);
+                    console.error('Error name:', error.name);
+                    console.error('Error message:', error.message);
+                    console.error('Error stack:', error.stack);
+                    
+                    // Display detailed error information
+                    var errorDetails = 'Ошибка при получении данных курсов валют';
+                    if (error.message) {
+                        errorDetails += '<br><small>Детали: ' + error.message + '</small>';
+                    }
+                    
+                    // Add debug info if in debug mode
+                    if (DEBUG_MODE) {
+                        errorDetails += '<br><small style="color:gray;">Debug: Проверьте консоль браузера (F12) для подробностей</small>';
+                    }
+                    
+                    td.innerHTML = '<p style="color:red;text-align:center;">' + errorDetails + '</p>';
+                });
         }, 1000);
     </script>
-    -->
 </head>
 
 <body>
@@ -256,10 +335,8 @@
             </table>
         </form>
     </td></tr>
-    <!-- Exchange rates section - commented out until implemented
     <tr><td style="padding:2px;" id="exchange_rates">
     </td></tr>
-    -->
 </table>
 </body>
 

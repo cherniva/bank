@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentMap;
 
 @RestController
 @RequestMapping("/exchange/course")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 public class ExchangeController {
     
     // Store the latest rates in memory

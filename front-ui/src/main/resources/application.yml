@@ -5,6 +5,12 @@ spring:
     name: front-ui
   config:
     import: "configserver:http://localhost:8888"
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
 
 logging:
   level:
