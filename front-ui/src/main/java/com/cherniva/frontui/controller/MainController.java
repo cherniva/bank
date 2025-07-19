@@ -4,6 +4,7 @@ import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.SessionValidationDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.frontui.service.AddAccountService;
+import com.cherniva.frontui.service.CashService;
 import com.cherniva.frontui.service.DeleteUserService;
 import com.cherniva.frontui.service.EditPasswordService;
 import com.cherniva.frontui.service.SessionService;
@@ -29,6 +30,7 @@ public class MainController {
     private final EditPasswordService editPasswordService;
     private final DeleteUserService deleteUserService;
     private final AddAccountService addAccountService;
+    private final CashService cashService;
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
@@ -140,6 +142,95 @@ public class MainController {
         model.addAttribute("authenticated", false);
         return "redirect:/login";
     }
+
+    @PostMapping("/user/cash")
+    public String handleCashOperation(@CookieValue(value = "sessionId", required = false) String sessionId,
+                                    @RequestParam String currency,
+                                    @RequestParam BigDecimal value,
+                                    @RequestParam String action,
+                                    Model model,
+                                    HttpServletResponse response) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                // Validate currency is not empty
+                if (currency == null || currency.trim().isEmpty()) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("cashErrors", List.of("Пожалуйста, выберите валюту"));
+                    return "main";
+                }
+
+                // Validate amount is positive
+                if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("cashErrors", List.of("Сумма должна быть больше нуля"));
+                    return "main";
+                }
+
+                // Find account with the specified currency for this user
+                List<AccountDto> accounts = sessionValidation.getAccounts();
+                AccountDto targetAccount = null;
+                if (accounts != null) {
+                    targetAccount = accounts.stream()
+                            .filter(account -> currency.equals(account.getCurrencyCode()))
+                            .findFirst()
+                            .orElse(null);
+                }
+
+                if (targetAccount == null) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("cashErrors", List.of("У вас нет счета в валюте " + currency));
+                    return "main";
+                }
+
+                if (!targetAccount.isActive()) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("cashErrors", List.of("Счет в валюте " + currency + " неактивен"));
+                    return "main";
+                }
+
+                try {
+                    UserAccountResponseDto userResponse;
+                    if ("PUT".equals(action)) {
+                        // Deposit operation
+                        userResponse = cashService.deposit(sessionId, targetAccount.getAccountId(), value);
+                        log.info("Deposited {} {} to account {}", value, currency, targetAccount.getAccountId());
+                    } else if ("GET".equals(action)) {
+                        // Withdraw operation
+                        userResponse = cashService.withdraw(sessionId, targetAccount.getAccountId(), value);
+                        log.info("Withdrew {} {} from account {}", value, currency, targetAccount.getAccountId());
+                    } else {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("cashErrors", List.of("Неизвестная операция"));
+                        return "main";
+                    }
+
+                    if (userResponse != null) {
+                        // Update session cookie
+                        Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
+                        sessionCookie.setPath("/");
+                        sessionCookie.setMaxAge(30 * 60); // 30 minutes
+                        response.addCookie(sessionCookie);
+                        return "redirect:/";
+                    } else {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("cashErrors", List.of("Подозрительная операция. Отклонино"));
+                        return "main";
+                    }
+                } catch (Exception e) {
+                    log.error("Cash operation failed", e);
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("cashErrors", List.of("Ошибка при выполнении операции: " + e.getMessage()));
+                    return "main";
+                }
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
+    }
+
+    
     
     private void populateModelWithUserData(Model model, SessionValidationDto sessionValidation) {
         // Basic user information

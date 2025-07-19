@@ -13,14 +13,14 @@ spring:
         - id: blocker-service
           uri: lb://blocker-service
           predicates:
-            - Path=/api/users/**, /users/**
+            - Path=/blocker/check
           metadata:
             service-name: blocker-service
 
         - id: cash-service
           uri: lb://cash-service
           predicates:
-            - Path=/api/transactions/**, /transactions/**
+            - Path=/api/cash/**
           metadata:
             service-name: cash-service
             

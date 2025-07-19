@@ -10,6 +10,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class BlockerController {
     @GetMapping
     public boolean check() {
-        return ThreadLocalRandom.current().nextBoolean();
+        return ThreadLocalRandom.current().nextInt(0, 4) != 0; // 75% true
     }
 }

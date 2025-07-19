@@ -6,6 +6,7 @@ import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.common.mapper.UserMapper;
 import com.cherniva.common.model.Account;
 import com.cherniva.common.model.UserDetails;
+import com.cherniva.common.repo.AccountRepo;
 import com.cherniva.common.repo.CurrencyRepo;
 import com.cherniva.common.repo.UserDetailsRepo;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AccountsController {
     private final UserDetailsRepo userDetailsRepo;
     private final PasswordEncoder passwordEncoder;
     private final SessionService sessionService;
+    private final AccountRepo accountRepo;
 
     @GetMapping("/hello")
     public String hello() {
@@ -97,6 +99,56 @@ public class AccountsController {
             sessionService.removeSession(sessionId);
             String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
             updatedUserAccountResponseDto.setSessionId(newSessionId);
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/deposit")
+    public ResponseEntity<UserAccountResponseDto> deposit(@RequestParam String sessionId, @RequestParam Long accountId, @RequestParam BigDecimal amount) {
+        try {
+            Account account = accountRepo.findById(accountId).orElseThrow();
+            account.setAmount(account.getAmount().add(amount));
+            account = accountRepo.save(account);
+            log.info("Successful deposit of {} {}. Current balance is {} {}", amount, account.getCurrency().getCode(), account.getAmount(), account.getCurrency().getCode());
+
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserAccountResponseDto userAccountResponseDto = sessionInfo.getUserData();
+            UserDetails userDetails = userDetailsRepo.findById(userAccountResponseDto.getUserId()).orElseThrow();
+            sessionService.removeSession(sessionId);
+            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(userDetails);
+            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
+            updatedUserAccountResponseDto.setSessionId(newSessionId);
+
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<UserAccountResponseDto> withdraw(@RequestParam String sessionId, @RequestParam Long accountId, @RequestParam BigDecimal amount) {
+        try {
+            Account account = accountRepo.findById(accountId).orElseThrow();
+            if (amount.compareTo(account.getAmount()) > 0) {
+                throw new RuntimeException("amount greater than balance");
+            }
+            account.setAmount(account.getAmount().subtract(amount));
+            account = accountRepo.save(account);
+
+            log.info("Successful withdraw of {} {}. Current balance is {} {}", amount, account.getCurrency().getCode(), account.getAmount(), account.getCurrency().getCode());
+
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserAccountResponseDto userAccountResponseDto = sessionInfo.getUserData();
+            UserDetails userDetails = userDetailsRepo.findById(userAccountResponseDto.getUserId()).orElseThrow();
+            sessionService.removeSession(sessionId);
+            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(userDetails);
+            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
+            updatedUserAccountResponseDto.setSessionId(newSessionId);
+
             return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
             log.error("", e);

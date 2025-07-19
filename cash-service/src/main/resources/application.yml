@@ -1,0 +1,7 @@
+server:
+  port: 8094
+spring:
+  application:
+    name: cash-service
+  config:
+    import: "configserver:http://localhost:8888"
