@@ -19,4 +19,15 @@ public class Account {
     private Currency currency;
     private BigDecimal amount;
     private boolean active = true;
+
+    @Override
+    public String toString() {
+        return "Account{" +
+                "id=" + id +
+                ", userDetailsId=" + (userDetails != null ? userDetails.getId() : null) +
+                ", currency=" + currency +
+                ", amount=" + amount +
+                ", active=" + active +
+                '}';
+    }
 }

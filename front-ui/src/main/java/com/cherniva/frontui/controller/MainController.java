@@ -3,9 +3,12 @@ package com.cherniva.frontui.controller;
 import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.SessionValidationDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.frontui.service.AddAccountService;
 import com.cherniva.frontui.service.DeleteUserService;
 import com.cherniva.frontui.service.EditPasswordService;
 import com.cherniva.frontui.service.SessionService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -25,6 +28,7 @@ public class MainController {
     private final SessionService sessionService;
     private final EditPasswordService editPasswordService;
     private final DeleteUserService deleteUserService;
+    private final AddAccountService addAccountService;
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
@@ -94,6 +98,48 @@ public class MainController {
         model.addAttribute("authenticated", false);
         return "redirect:/login";
     }
+
+    @PostMapping("/user/addAccount")
+    public String addAccount(@CookieValue(value = "sessionId", required = false) String sessionId,
+                            @RequestParam String currencyCode, Model model, HttpServletResponse response) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                log.info("Adding account for user: {} with currency: {}", sessionValidation.getUsername(), currencyCode);
+                
+                // Validate currency code is not empty
+                if (currencyCode == null || currencyCode.trim().isEmpty()) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("addAccountErrors", List.of("Пожалуйста, выберите валюту"));
+                    return "main";
+                }
+                
+                // Check if user already has an account with this currency
+                List<AccountDto> existingAccounts = sessionValidation.getAccounts();
+                if (existingAccounts != null) {
+                    boolean hasAccountWithCurrency = existingAccounts.stream()
+                            .anyMatch(account -> currencyCode.equals(account.getCurrencyCode()));
+                    
+                    if (hasAccountWithCurrency) {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("addAccountErrors", List.of("У вас уже есть счет в валюте " + currencyCode));
+                        return "main";
+                    }
+                }
+
+                var userResponse = addAccountService.addAccount(sessionId, currencyCode);
+                log.info("Updated user: {}", userResponse);
+                Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
+                sessionCookie.setPath("/");
+                sessionCookie.setMaxAge(30 * 60); // 30 minutes
+                response.addCookie(sessionCookie);
+                return "redirect:/";
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
+    }
     
     private void populateModelWithUserData(Model model, SessionValidationDto sessionValidation) {
         // Basic user information
@@ -108,13 +154,14 @@ public class MainController {
         
         // Real accounts data from session
         List<AccountDto> accounts = sessionValidation.getAccounts();
+        accounts = accounts.subList(0, accounts.size()/2);
         model.addAttribute("accounts", Objects.requireNonNullElseGet(accounts, () -> new ArrayList<AccountDto>()));
         
         // Mock currencies for dropdowns (this could be fetched from a service)
         List<MockCurrency> currencies = new ArrayList<>();
         currencies.add(new MockCurrency("USD", "Доллар США"));
-        currencies.add(new MockCurrency("EUR", "Евро"));
-        currencies.add(new MockCurrency("RUB", "Рубль"));
+        currencies.add(new MockCurrency("RUB", "Российский рубль"));
+        currencies.add(new MockCurrency("CYN", "Китайский юань"));
         model.addAttribute("currency", currencies);
         
         // Mock users for transfer dropdown (this could be fetched from a service)
@@ -129,6 +176,7 @@ public class MainController {
         model.addAttribute("cashErrors", null);
         model.addAttribute("transferErrors", null);
         model.addAttribute("transferOtherErrors", null);
+        model.addAttribute("addAccountErrors", null);
     }
     
     private String getFullName(SessionValidationDto sessionValidation) {
