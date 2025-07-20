@@ -35,6 +35,7 @@ public class NotificationController {
                     notificationDto.getOperationType(),
                     message
             );
+            log.info("{}", notification);
             
             notificationService.storeNotification(notification);
             return ResponseEntity.ok().build();
@@ -76,6 +77,7 @@ public class NotificationController {
                     notificationDto.getOperationType(),
                     message
             );
+            log.info("{}", notification);
             
             notificationService.storeNotification(notification);
             return ResponseEntity.ok().build();
