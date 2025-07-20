@@ -29,6 +29,7 @@ public class MainController {
     private final AddAccountService addAccountService;
     private final CashService cashService;
     private final TransferService transferService;
+    private final DeleteAccountService deleteAccountService;
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
@@ -155,8 +156,8 @@ public class MainController {
         return "redirect:/login";
     }
 
-    @PostMapping("/user/deleteAccount")
-    public String deleteAccount(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
+    @PostMapping("/user/deleteUser")
+    public String deleteUser(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
         if (sessionId != null) {
             SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
 
@@ -263,12 +264,6 @@ public class MainController {
                     return "main";
                 }
 
-                if (!targetAccount.isActive()) {
-                    populateModelWithUserData(model, sessionValidation);
-                    model.addAttribute("cashErrors", List.of("Счет в валюте " + currency + " неактивен"));
-                    return "main";
-                }
-
                 try {
                     UserAccountResponseDto userResponse;
                     if ("PUT".equals(action)) {
@@ -367,12 +362,6 @@ public class MainController {
                     return "main";
                 }
 
-                if (!sourceAccount.isActive()) {
-                    populateModelWithUserData(model, sessionValidation);
-                    model.addAttribute("transferErrors", List.of("Счет в валюте " + fromCurrency + " неактивен"));
-                    return "main";
-                }
-
                 // Validate sufficient balance
                 if (value.compareTo(sourceAccount.getAmount()) > 0) {
                     populateModelWithUserData(model, sessionValidation);
@@ -403,6 +392,71 @@ public class MainController {
                     log.error("Transfer operation failed", e);
                     populateModelWithUserData(model, sessionValidation);
                     model.addAttribute("transferErrors", List.of("Ошибка при выполнении перевода: " + e.getMessage()));
+                    return "main";
+                }
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
+    }
+
+    @PostMapping("/user/deleteUserAccount")
+    public String deleteUserAccount(@CookieValue(value = "sessionId", required = false) String sessionId,
+                                   @RequestParam Long accountId,
+                                   Model model,
+                                   HttpServletResponse response) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                // Validate that the account belongs to the current user
+                List<AccountDto> userAccounts = sessionValidation.getAccounts();
+                boolean accountBelongsToUser = userAccounts != null && userAccounts.stream()
+                        .anyMatch(account -> account.getAccountId().equals(accountId));
+
+                if (!accountBelongsToUser) {
+                    log.error("User {} attempted to delete account {} that doesn't belong to them", 
+                            sessionValidation.getUsername(), accountId);
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("deleteAccountErrors", List.of("Счет не найден или не принадлежит вам"));
+                    return "main";
+                }
+
+                // Find the account to check if it has zero balance
+                AccountDto accountToDelete = userAccounts.stream()
+                        .filter(account -> account.getAccountId().equals(accountId))
+                        .findFirst()
+                        .orElse(null);
+
+                if (accountToDelete != null && accountToDelete.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("deleteAccountErrors", List.of("Невозможно удалить счет с ненулевым балансом. Сначала переведите средства"));
+                    return "main";
+                }
+
+                try {
+                    // Call the accounts service to delete the account
+                    // We'll need to create this service method
+                    UserAccountResponseDto userResponse = deleteAccountService.deleteAccount(sessionId, accountId);
+
+                    if (userResponse != null) {
+                        // Update session cookie
+                        Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
+                        sessionCookie.setPath("/");
+                        sessionCookie.setMaxAge(30 * 60); // 30 minutes
+                        response.addCookie(sessionCookie);
+
+                        log.info("Account {} deleted successfully for user {}", accountId, sessionValidation.getUsername());
+                        return "redirect:/";
+                    } else {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("deleteAccountErrors", List.of("Ошибка при удалении счета"));
+                        return "main";
+                    }
+                } catch (Exception e) {
+                    log.error("Account deletion failed", e);
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("deleteAccountErrors", List.of("Ошибка при удалении счета: " + e.getMessage()));
                     return "main";
                 }
             }
@@ -451,6 +505,7 @@ public class MainController {
         model.addAttribute("transferErrors", null);
         model.addAttribute("transferOtherErrors", null);
         model.addAttribute("addAccountErrors", null);
+        model.addAttribute("deleteAccountErrors", null);
     }
     
     private String getFullName(SessionValidationDto sessionValidation) {

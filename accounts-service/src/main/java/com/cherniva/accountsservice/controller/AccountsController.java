@@ -364,4 +364,96 @@ public class AccountsController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @DeleteMapping("/deleteAccount")
+    public ResponseEntity<UserAccountResponseDto> deleteAccount(@RequestParam String sessionId, @RequestParam Long accountId) {
+        try {
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElseThrow();
+            
+            // Find the account to delete
+            Account accountToDelete = userDetails.getAccounts().stream()
+                    .filter(account -> account.getId().equals(accountId))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Account not found or doesn't belong to user"));
+            
+            // Store currency code before deletion for notification
+            String currencyCode = accountToDelete.getCurrency().getCode();
+            
+            // Validate that the account has zero balance
+            if (accountToDelete.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                // Send notification for failed operation (non-zero balance)
+                notificationService.sendDeleteAccountNotification(
+                        userDetails.getId().toString(),
+                        userDetails.getUsername(),
+                        currencyCode,
+                        false // failed
+                );
+                throw new RuntimeException("Cannot delete account with non-zero balance");
+            }
+            
+            // Remove the account from user's accounts list
+            userDetails.getAccounts().remove(accountToDelete);
+            
+            // Delete the account from database
+            accountRepo.delete(accountToDelete);
+            
+            // Save updated user
+            UserDetails savedUser = userDetailsRepo.save(userDetails);
+            
+            log.info("Account {} deleted successfully for user {}", accountId, userDetails.getUsername());
+            
+            // Update session with new user data
+            sessionService.removeSession(sessionId);
+            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
+            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
+            updatedUserAccountResponseDto.setSessionId(newSessionId);
+            
+            // Send notification for successful operation
+            notificationService.sendDeleteAccountNotification(
+                    userDetails.getId().toString(),
+                    userDetails.getUsername(),
+                    currencyCode,
+                    true // success
+            );
+            
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
+        } catch (Exception e) {
+            log.error("Delete account operation failed", e);
+            
+            // Send notification for failed operation (exception)
+            try {
+                SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+                if (sessionInfo != null && sessionInfo.getUserData() != null) {
+                    // Try to get currency code from the account if possible
+                    String currencyCode = "Unknown";
+                    try {
+                        UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElse(null);
+                        if (userDetails != null) {
+                            Account accountToDelete = userDetails.getAccounts().stream()
+                                    .filter(account -> account.getId().equals(accountId))
+                                    .findFirst()
+                                    .orElse(null);
+                            if (accountToDelete != null) {
+                                currencyCode = accountToDelete.getCurrency().getCode();
+                            }
+                        }
+                    } catch (Exception currencyException) {
+                        // Keep default "Unknown" currency code
+                    }
+                    
+                    notificationService.sendDeleteAccountNotification(
+                            sessionInfo.getUserData().getUserId().toString(),
+                            sessionInfo.getUserData().getUsername(),
+                            currencyCode,
+                            false // failed
+                    );
+                }
+            } catch (Exception notificationException) {
+                log.error("Failed to send delete account failure notification", notificationException);
+            }
+            
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

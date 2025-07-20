@@ -121,4 +121,43 @@ public class NotificationService {
             // Don't throw exception to avoid breaking the main add account flow
         }
     }
+    
+    public void sendDeleteAccountNotification(String userId, String username, String currencyCode, boolean success) {
+        try {
+            AccountsNotificationDto notificationDto = new AccountsNotificationDto();
+            notificationDto.setUserId(userId);
+            notificationDto.setUsername(username);
+            notificationDto.setOperationType("deleteAccount");
+            notificationDto.setCurrencyCode(currencyCode);
+            
+            // Set appropriate message based on success/failure
+            if (success) {
+                notificationDto.setMessage(String.format("Счет в валюте %s успешно удален", currencyCode));
+            } else {
+                notificationDto.setMessage(String.format("Ошибка при удалении счета в валюте %s", currencyCode));
+            }
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            
+            HttpEntity<AccountsNotificationDto> requestEntity = new HttpEntity<>(notificationDto, headers);
+            
+            restTemplate.exchange(
+                    "lb://api-gateway/notifications/accounts",
+                    HttpMethod.POST,
+                    requestEntity,
+                    Void.class
+            );
+            
+            if (success) {
+                log.info("Delete account notification sent for user: {}, currency: {}", username, currencyCode);
+            } else {
+                log.info("Delete account failure notification sent for user: {}, currency: {}", username, currencyCode);
+            }
+                    
+        } catch (Exception e) {
+            log.error("Failed to send delete account notification", e);
+            // Don't throw exception to avoid breaking the main delete account flow
+        }
+    }
 } 
