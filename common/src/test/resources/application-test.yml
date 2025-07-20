@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+    
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        globally_quoted_identifiers: true
+        
+  h2:
+    console:
+      enabled: false
+      
+  sql:
+    init:
+      mode: never
+      
+logging:
+  level:
+    org.springframework.orm.jpa: DEBUG
+    org.springframework.transaction: DEBUG
+    org.hibernate: INFO
+    com.cherniva: DEBUG
+    
+# Disable external services for unit tests
+eureka:
+  client:
+    enabled: false
+    
+management:
+  endpoints:
+    enabled-by-default: false 
