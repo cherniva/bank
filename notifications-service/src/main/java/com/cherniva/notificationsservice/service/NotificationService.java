@@ -25,10 +25,23 @@ public class NotificationService {
     public List<NotificationDto> getUserNotifications(String userId) {
         List<NotificationDto> notifications = userNotifications.getOrDefault(userId, new ArrayList<>());
         
-        // Sort by timestamp (newest first)
+        // Only return unread notifications, sorted by timestamp (newest first)
         return notifications.stream()
+                .filter(notification -> !notification.isRead())
                 .sorted((n1, n2) -> n2.getTimestamp().compareTo(n1.getTimestamp()))
                 .collect(Collectors.toList());
+    }
+    
+    public void markNotificationAsRead(String notificationId) {
+        // Find and mark the notification as read
+        for (List<NotificationDto> notifications : userNotifications.values()) {
+            for (NotificationDto notification : notifications) {
+                if (notificationId.equals(notification.getId())) {
+                    notification.setRead(true);
+                    return;
+                }
+            }
+        }
     }
     
     public NotificationDto createNotification(String userId, String username, String serviceType, 

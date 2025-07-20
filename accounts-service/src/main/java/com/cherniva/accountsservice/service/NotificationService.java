@@ -82,4 +82,43 @@ public class NotificationService {
             // Don't throw exception to avoid breaking the main edit user flow
         }
     }
+    
+    public void sendAddAccountNotification(String userId, String username, String currencyCode, boolean success) {
+        try {
+            AccountsNotificationDto notificationDto = new AccountsNotificationDto();
+            notificationDto.setUserId(userId);
+            notificationDto.setUsername(username);
+            notificationDto.setOperationType("addAccount");
+            notificationDto.setCurrencyCode(currencyCode);
+            
+            // Set appropriate message based on success/failure
+            if (success) {
+                notificationDto.setMessage(String.format("Счет в валюте %s успешно создан", currencyCode));
+            } else {
+                notificationDto.setMessage(String.format("Ошибка при создании счета в валюте %s", currencyCode));
+            }
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            
+            HttpEntity<AccountsNotificationDto> requestEntity = new HttpEntity<>(notificationDto, headers);
+            
+            restTemplate.exchange(
+                    "lb://api-gateway/notifications/accounts",
+                    HttpMethod.POST,
+                    requestEntity,
+                    Void.class
+            );
+            
+            if (success) {
+                log.info("Add account notification sent for user: {}, currency: {}", username, currencyCode);
+            } else {
+                log.info("Add account failure notification sent for user: {}, currency: {}", username, currencyCode);
+            }
+                    
+        } catch (Exception e) {
+            log.error("Failed to send add account notification", e);
+            // Don't throw exception to avoid breaking the main add account flow
+        }
+    }
 } 

@@ -18,11 +18,6 @@ public class NotificationController {
     
     private final NotificationService notificationService;
 
-    @GetMapping("/test")
-    public String getTest() {
-        return "Success";
-    }
-    
     // Endpoint for receiving notifications from accounts service
     @PostMapping("/accounts")
     public ResponseEntity<Void> receiveAccountsNotification(@RequestBody AccountsNotificationDto notificationDto) {
@@ -92,6 +87,17 @@ public class NotificationController {
         try {
             List<NotificationDto> notifications = notificationService.getUserNotifications(userId);
             return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    // Endpoint to mark a notification as read
+    @PostMapping("/mark-read/{notificationId}")
+    public ResponseEntity<Void> markNotificationAsRead(@PathVariable String notificationId) {
+        try {
+            notificationService.markNotificationAsRead(notificationId);
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }

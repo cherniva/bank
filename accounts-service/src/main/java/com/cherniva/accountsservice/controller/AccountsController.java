@@ -222,9 +222,34 @@ public class AccountsController {
             sessionService.removeSession(sessionId);
             String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
             updatedUserAccountResponseDto.setSessionId(newSessionId);
+            
+            // Send notification for successful account creation
+            notificationService.sendAddAccountNotification(
+                    userDetails.getId().toString(),
+                    userDetails.getUsername(),
+                    currencyCode,
+                    true // success
+            );
+            
             return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
-            log.error("", e);
+            log.error("Add account operation failed", e);
+            
+            // Send notification for failed operation (exception)
+            try {
+                SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+                if (sessionInfo != null && sessionInfo.getUserData() != null) {
+                    notificationService.sendAddAccountNotification(
+                            sessionInfo.getUserData().getUserId().toString(),
+                            sessionInfo.getUserData().getUsername(),
+                            currencyCode,
+                            false // failed
+                    );
+                }
+            } catch (Exception notificationException) {
+                log.error("Failed to send add account failure notification", notificationException);
+            }
+            
             return ResponseEntity.badRequest().build();
         }
     }
