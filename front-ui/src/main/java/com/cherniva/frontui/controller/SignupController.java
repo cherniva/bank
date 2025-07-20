@@ -61,6 +61,36 @@ public class SignupController {
             return "signup";
         }
 
+        // Validate name and surname
+        if (name == null || name.trim().isEmpty() || name.trim().length() < 2) {
+            model.addAttribute("error", "Name must be at least 2 characters long");
+            return "signup";
+        }
+
+        if (surname == null || surname.trim().isEmpty() || surname.trim().length() < 2) {
+            model.addAttribute("error", "Surname must be at least 2 characters long");
+            return "signup";
+        }
+
+        // Validate birthdate and age
+        if (birthdate == null || birthdate.trim().isEmpty()) {
+            model.addAttribute("error", "Birthdate is required");
+            return "signup";
+        }
+
+        try {
+            LocalDate birthDate = LocalDate.parse(birthdate);
+            LocalDate eighteenYearsAgo = LocalDate.now().minusYears(18);
+            
+            if (birthDate.isAfter(eighteenYearsAgo)) {
+                model.addAttribute("error", "User must be at least 18 years old");
+                return "signup";
+            }
+        } catch (Exception e) {
+            model.addAttribute("error", "Invalid date format");
+            return "signup";
+        }
+
         UserRegistrationDto userRegistrationDto = new UserRegistrationDto();
         userRegistrationDto.setUsername(username);
         userRegistrationDto.setPassword(password);

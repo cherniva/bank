@@ -24,6 +24,7 @@ public class MainController {
 
     private final SessionService sessionService;
     private final EditPasswordService editPasswordService;
+    private final EditUserService editUserService;
     private final DeleteUserService deleteUserService;
     private final AddAccountService addAccountService;
     private final CashService cashService;
@@ -67,6 +68,87 @@ public class MainController {
                 UserAccountResponseDto userAccountResponseDto = editPasswordService.editPassword(sessionId, password);
                 log.info("Updated user: {}", userAccountResponseDto);
                 sessionService.logout(sessionId);
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
+    }
+
+    @PostMapping("/user/editUser")
+    public String editUser(@CookieValue(value = "sessionId", required = false) String sessionId,
+                          @RequestParam(required = false) String name,
+                          @RequestParam(required = false) String surname,
+                          @RequestParam(required = false) String birthdate,
+                          Model model,
+                          HttpServletResponse response) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                // Validate that at least one field is provided
+                if ((name == null || name.trim().isEmpty()) && 
+                    (surname == null || surname.trim().isEmpty()) &&
+                    (birthdate == null || birthdate.trim().isEmpty())) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("userAccountsErrors", List.of("Пожалуйста, заполните хотя бы одно поле"));
+                    return "main";
+                }
+
+                // Validate name if provided
+                if (name != null && !name.trim().isEmpty() && name.trim().length() < 2) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("userAccountsErrors", List.of("Имя должно содержать минимум 2 символа"));
+                    return "main";
+                }
+
+                // Validate surname if provided
+                if (surname != null && !surname.trim().isEmpty() && surname.trim().length() < 2) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("userAccountsErrors", List.of("Фамилия должна содержать минимум 2 символа"));
+                    return "main";
+                }
+
+                // Validate birthdate if provided
+                if (birthdate != null && !birthdate.trim().isEmpty()) {
+                    try {
+                        java.time.LocalDate birthDate = java.time.LocalDate.parse(birthdate);
+                        java.time.LocalDate eighteenYearsAgo = java.time.LocalDate.now().minusYears(18);
+                        
+                        if (birthDate.isAfter(eighteenYearsAgo)) {
+                            populateModelWithUserData(model, sessionValidation);
+                            model.addAttribute("userAccountsErrors", List.of("Пользователь должен быть старше 18 лет"));
+                            return "main";
+                        }
+                    } catch (Exception e) {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("userAccountsErrors", List.of("Неверный формат даты"));
+                        return "main";
+                    }
+                }
+
+                try {
+                    UserAccountResponseDto userResponse = editUserService.editUser(sessionId, name, surname, birthdate);
+                    
+                    if (userResponse != null) {
+                        // Update session cookie
+                        Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
+                        sessionCookie.setPath("/");
+                        sessionCookie.setMaxAge(30 * 60); // 30 minutes
+                        response.addCookie(sessionCookie);
+                        
+                        log.info("User updated successfully: {}", userResponse.getUsername());
+                        return "redirect:/";
+                    } else {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("userAccountsErrors", List.of("Ошибка при обновлении данных пользователя"));
+                        return "main";
+                    }
+                } catch (Exception e) {
+                    log.error("User edit operation failed", e);
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("userAccountsErrors", List.of("Ошибка при обновлении данных: " + e.getMessage()));
+                    return "main";
+                }
             }
         }
         model.addAttribute("authenticated", false);
@@ -337,8 +419,10 @@ public class MainController {
         model.addAttribute("userId", sessionValidation.getUserId());
         model.addAttribute("authenticated", true);
         
-        // Real user data from session
-        model.addAttribute("name", getFullName(sessionValidation));
+        // Real user data from session - separate name and surname
+        model.addAttribute("name", sessionValidation.getName() != null ? sessionValidation.getName() : "");
+        model.addAttribute("surname", sessionValidation.getSurname() != null ? sessionValidation.getSurname() : "");
+        model.addAttribute("fullName", getFullName(sessionValidation));
         model.addAttribute("birthdate", sessionValidation.getBirthday() != null ? 
             sessionValidation.getBirthday().toString() : "N/A");
         

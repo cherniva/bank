@@ -40,6 +40,15 @@ public class AccountsController {
     @PostMapping("/register")
     public ResponseEntity<UserAccountResponseDto> registerUser(@RequestBody UserRegistrationDto userRegistrationDto) {
         try {
+            // Validate age - user must be at least 18 years old
+            if (userRegistrationDto.getBirthdate() != null) {
+                java.time.LocalDate eighteenYearsAgo = java.time.LocalDate.now().minusYears(18);
+                if (userRegistrationDto.getBirthdate().isAfter(eighteenYearsAgo)) {
+                    log.error("Registration attempt with birthdate that makes user younger than 18: {}", userRegistrationDto.getBirthdate());
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+            
             UserDetails userDetails = userMapper.userRegistrationToUser(userRegistrationDto);
             userDetails.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             UserDetails savedUser = userDetailsRepo.save(userDetails);
@@ -60,6 +69,58 @@ public class AccountsController {
             UserDetails savedUser = userDetailsRepo.save(userDetails);
             UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
             sessionService.removeSession(sessionId);
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/editUser")
+    public ResponseEntity<UserAccountResponseDto> editUser(@RequestParam String sessionId, 
+                                                          @RequestParam(required = false) String name,
+                                                          @RequestParam(required = false) String surname,
+                                                          @RequestParam(required = false) String birthdate) {
+        try {
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElseThrow();
+            
+            // Update name if provided
+            if (name != null && !name.trim().isEmpty()) {
+                userDetails.setName(name.trim());
+            }
+            
+            // Update surname if provided
+            if (surname != null && !surname.trim().isEmpty()) {
+                userDetails.setSurname(surname.trim());
+            }
+            
+            // Update birthdate if provided
+            if (birthdate != null && !birthdate.trim().isEmpty()) {
+                try {
+                    java.time.LocalDate birthDate = java.time.LocalDate.parse(birthdate);
+                    java.time.LocalDate eighteenYearsAgo = java.time.LocalDate.now().minusYears(18);
+                    
+                    if (birthDate.isAfter(eighteenYearsAgo)) {
+                        log.error("User attempted to set birthdate that makes them younger than 18: {}", birthdate);
+                        return ResponseEntity.badRequest().build();
+                    }
+                    
+                    userDetails.setBirthdate(birthDate);
+                } catch (Exception e) {
+                    log.error("Invalid birthdate format: {}", birthdate, e);
+                    return ResponseEntity.badRequest().build();
+                }
+            }
+            
+            UserDetails savedUser = userDetailsRepo.save(userDetails);
+            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
+            
+            // Remove old session and create new one
+            sessionService.removeSession(sessionId);
+            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
+            updatedUserAccountResponseDto.setSessionId(newSessionId);
+            
             return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
             log.error("", e);
