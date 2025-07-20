@@ -6,10 +6,26 @@ spring:
   config:
     import: "configserver:http://localhost:8888"
 
-#logging:
-#  level:
-#    org.springframework.security: DEBUG
-#    org.springframework.cloud.gateway: DEBUG
-#    org.springframework.security.oauth2: DEBUG
-#    org.springframework.web.reactive: DEBUG
-#    reactor.netty: DEBUG
+logging:
+  level:
+    # Spring Cloud Gateway logs
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.filter: DEBUG
+    org.springframework.cloud.gateway.filter.factory.RetryGatewayFilterFactory: DEBUG
+    
+    # Resilience4j logs
+    io.github.resilience4j: DEBUG
+    io.github.resilience4j.retry: DEBUG
+    io.github.resilience4j.circuitbreaker: DEBUG
+    
+    # Security and OAuth (if needed)
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    
+    # HTTP client logs
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: DEBUG
+    reactor.netty.http.client: DEBUG
+    
+    # Your application logs
+    com.cherniva.apigateway: DEBUG
