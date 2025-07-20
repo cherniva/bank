@@ -1,6 +1,7 @@
 package com.cherniva.accountsservice.controller;
 
 import com.cherniva.accountsservice.service.SessionService;
+import com.cherniva.accountsservice.service.NotificationService;
 import com.cherniva.common.dto.ExchangeRateDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserRegistrationDto;
@@ -31,6 +32,7 @@ public class AccountsController {
     private final PasswordEncoder passwordEncoder;
     private final SessionService sessionService;
     private final AccountRepo accountRepo;
+    private final NotificationService notificationService;
 
     @GetMapping("/hello")
     public String hello() {
@@ -85,14 +87,21 @@ public class AccountsController {
             SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
             UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElseThrow();
             
+            // Track what fields are being updated
+            boolean nameUpdated = false;
+            boolean surnameUpdated = false;
+            boolean birthdateUpdated = false;
+            
             // Update name if provided
             if (name != null && !name.trim().isEmpty()) {
                 userDetails.setName(name.trim());
+                nameUpdated = true;
             }
             
             // Update surname if provided
             if (surname != null && !surname.trim().isEmpty()) {
                 userDetails.setSurname(surname.trim());
+                surnameUpdated = true;
             }
             
             // Update birthdate if provided
@@ -103,12 +112,35 @@ public class AccountsController {
                     
                     if (birthDate.isAfter(eighteenYearsAgo)) {
                         log.error("User attempted to set birthdate that makes them younger than 18: {}", birthdate);
+                        
+                        // Send notification for failed operation
+                        notificationService.sendEditUserNotification(
+                                userDetails.getId().toString(),
+                                userDetails.getUsername(),
+                                nameUpdated ? name : null,
+                                surnameUpdated ? surname : null,
+                                birthdate,
+                                false // failed
+                        );
+                        
                         return ResponseEntity.badRequest().build();
                     }
                     
                     userDetails.setBirthdate(birthDate);
+                    birthdateUpdated = true;
                 } catch (Exception e) {
                     log.error("Invalid birthdate format: {}", birthdate, e);
+                    
+                    // Send notification for failed operation
+                    notificationService.sendEditUserNotification(
+                            userDetails.getId().toString(),
+                            userDetails.getUsername(),
+                            nameUpdated ? name : null,
+                            surnameUpdated ? surname : null,
+                            birthdate,
+                            false // failed
+                    );
+                    
                     return ResponseEntity.badRequest().build();
                 }
             }
@@ -121,9 +153,37 @@ public class AccountsController {
             String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
             updatedUserAccountResponseDto.setSessionId(newSessionId);
             
+            // Send notification for successful operation
+            notificationService.sendEditUserNotification(
+                    userDetails.getId().toString(),
+                    userDetails.getUsername(),
+                    nameUpdated ? name : null,
+                    surnameUpdated ? surname : null,
+                    birthdateUpdated ? birthdate : null,
+                    true // success
+            );
+            
             return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
-            log.error("", e);
+            log.error("Edit user operation failed", e);
+            
+            // Send notification for failed operation (exception)
+            try {
+                SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+                if (sessionInfo != null && sessionInfo.getUserData() != null) {
+                    notificationService.sendEditUserNotification(
+                            sessionInfo.getUserData().getUserId().toString(),
+                            sessionInfo.getUserData().getUsername(),
+                            name,
+                            surname,
+                            birthdate,
+                            false // failed
+                    );
+                }
+            } catch (Exception notificationException) {
+                log.error("Failed to send edit user failure notification", notificationException);
+            }
+            
             return ResponseEntity.badRequest().build();
         }
     }
