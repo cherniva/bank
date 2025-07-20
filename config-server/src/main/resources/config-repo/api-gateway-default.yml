@@ -23,22 +23,6 @@ spring:
             - Path=/api/cash/**
           metadata:
             service-name: cash-service
-            
-        # Notifications Service (example - adjust URI as needed)
-        - id: exchange-generator-service
-          uri: lb://exchange-generator-service
-          predicates:
-            - Path=/api/notifications/**, /notifications/**
-          metadata:
-            service-name: exchange-generator-service
-            
-        # General API route for backward compatibility
-#        - id: general-api
-#          uri: http://localhost:8091
-#          predicates:
-#            - Path=/api/**
-#          metadata:
-#            service-name: general-api
 
         - id: exchange-service
           uri: lb://exchange-service
@@ -50,7 +34,7 @@ spring:
         - id: notifications-service
           uri: lb://notifications-service
           predicates:
-            - Path=/api/notifications/**, /notifications/**
+            - Path=/notifications/**
           metadata:
             service-name: notifications-service
 

@@ -23,12 +23,14 @@ import static org.hibernate.engine.jdbc.Size.DEFAULT_SCALE;
 @Slf4j
 public class TransferService {
     private final RestTemplate restTemplate;
+    private final NotificationService notificationService;
 
     public UserAccountResponseDto transfer(String sessionId, BigDecimal amount, String fromCurrency,
                                            String toCurrency, String username) {
         try {
             var valid = validOperation();
             log.info("Operation validity status: {}", valid ? "valid" : "invalid");
+            
             if (valid) {
                 UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/accounts/transfer")
                         .queryParam("sessionId", sessionId)
@@ -44,17 +46,58 @@ public class TransferService {
 
                 HttpEntity<ExchangeRateDto> requestEntity = new HttpEntity<>(rate, headers);
 
-                return restTemplate.exchange(
+                UserAccountResponseDto response = restTemplate.exchange(
                                 builder.toUriString(),
                                 HttpMethod.POST,
                                 requestEntity,
                                 UserAccountResponseDto.class)
                         .getBody();
+                
+                // Send notification for successful transfer
+                if (response != null) {
+                    BigDecimal convertedAmount = amount.multiply(rate.getSellRate());
+                    notificationService.sendTransferNotification(
+                            response.getUserId().toString(),
+                            response.getUsername(),
+                            amount,
+                            fromCurrency,
+                            toCurrency,
+                            username,
+                            convertedAmount,
+                            true // success
+                    );
+                }
+                
+                return response;
             } else {
+                // Send notification for failed operation (blocked by fraud detection)
+                notificationService.sendTransferNotification(
+                        null, // userId will be null for failed operations
+                        null, // username will be null for failed operations
+                        amount,
+                        fromCurrency,
+                        toCurrency,
+                        username,
+                        null, // convertedAmount will be null for failed operations
+                        false // failed
+                );
                 return null;
             }
         } catch (Exception e) {
-            log.error("", e);
+            log.error("Transfer operation failed", e);
+            
+            // Send notification for failed operation (exception)
+            notificationService.sendTransferNotification(
+                    null, // userId will be null for failed operations
+                    null, // username will be null for failed operations
+                    amount,
+                    fromCurrency,
+                    toCurrency,
+                    username,
+                    null, // convertedAmount will be null for failed operations
+                    false // failed
+            );
+            
             throw new RuntimeException(e);
         }
     }
