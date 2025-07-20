@@ -39,6 +39,20 @@ public class ExchangeController {
         }
         rates.add(rubCny);
         
+        // Add USD-CNY pair (USD -> RUB -> CNY)
+        ExchangeRateDto usdCny = latestRates.get("USD-CNY");
+        if (usdCny == null) {
+            usdCny = calculateUsdCnyRate(rubUsd, rubCny);
+        }
+        rates.add(usdCny);
+        
+        // Add CNY-USD pair (CNY -> RUB -> USD)
+//        ExchangeRateDto cnyUsd = latestRates.get("CNY-USD");
+//        if (cnyUsd == null) {
+//            cnyUsd = calculateCnyUsdRate(rubUsd, rubCny);
+//        }
+//        rates.add(cnyUsd);
+        
         response.setRates(rates);
         response.setMessage("Exchange rates retrieved successfully");
         response.setSuccess(true);
@@ -81,5 +95,33 @@ public class ExchangeController {
         rubCny.setSellRate(new BigDecimal("0.0792"));
         rubCny.setLastUpdated(LocalDateTime.now());
         return rubCny;
+    }
+    
+    private ExchangeRateDto calculateUsdCnyRate(ExchangeRateDto rubUsd, ExchangeRateDto rubCny) {
+        ExchangeRateDto usdCny = new ExchangeRateDto();
+        usdCny.setFromCurrency("USD");
+        usdCny.setToCurrency("CNY");
+        // USD -> CNY calculation:
+        // RUB-USD = 0.0112 means 1 RUB = 0.0112 USD, so 1 USD = 1/0.0112 = 89.29 RUB
+        // RUB-CNY = 0.0815 means 1 RUB = 0.0815 CNY
+        // Therefore: 1 USD = 89.29 RUB = 89.29 × 0.0815 = 7.28 CNY
+        usdCny.setBuyRate(BigDecimal.ONE.divide(rubUsd.getBuyRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubCny.getBuyRate()));
+        usdCny.setSellRate(BigDecimal.ONE.divide(rubUsd.getSellRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubCny.getSellRate()));
+        usdCny.setLastUpdated(LocalDateTime.now());
+        return usdCny;
+    }
+    
+    private ExchangeRateDto calculateCnyUsdRate(ExchangeRateDto rubUsd, ExchangeRateDto rubCny) {
+        ExchangeRateDto cnyUsd = new ExchangeRateDto();
+        cnyUsd.setFromCurrency("CNY");
+        cnyUsd.setToCurrency("USD");
+        // CNY -> USD calculation:
+        // RUB-CNY = 0.0815 means 1 RUB = 0.0815 CNY, so 1 CNY = 1/0.0815 = 12.27 RUB
+        // RUB-USD = 0.0112 means 1 RUB = 0.0112 USD
+        // Therefore: 1 CNY = 12.27 RUB = 12.27 × 0.0112 = 0.137 USD
+        cnyUsd.setBuyRate(BigDecimal.ONE.divide(rubCny.getBuyRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubUsd.getBuyRate()));
+        cnyUsd.setSellRate(BigDecimal.ONE.divide(rubCny.getSellRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubUsd.getSellRate()));
+        cnyUsd.setLastUpdated(LocalDateTime.now());
+        return cnyUsd;
     }
 }

@@ -3,11 +3,7 @@ package com.cherniva.frontui.controller;
 import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.SessionValidationDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
-import com.cherniva.frontui.service.AddAccountService;
-import com.cherniva.frontui.service.CashService;
-import com.cherniva.frontui.service.DeleteUserService;
-import com.cherniva.frontui.service.EditPasswordService;
-import com.cherniva.frontui.service.SessionService;
+import com.cherniva.frontui.service.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +27,7 @@ public class MainController {
     private final DeleteUserService deleteUserService;
     private final AddAccountService addAccountService;
     private final CashService cashService;
+    private final TransferService transferService;
 
     @GetMapping({"/", "/main"})
     public String mainPage(@CookieValue(value = "sessionId", required = false) String sessionId, Model model) {
@@ -222,6 +219,108 @@ public class MainController {
                     log.error("Cash operation failed", e);
                     populateModelWithUserData(model, sessionValidation);
                     model.addAttribute("cashErrors", List.of("Ошибка при выполнении операции: " + e.getMessage()));
+                    return "main";
+                }
+            }
+        }
+        model.addAttribute("authenticated", false);
+        return "redirect:/login";
+    }
+
+    @PostMapping("/user/transfer")
+    public String handleTransfer(@CookieValue(value = "sessionId", required = false) String sessionId,
+                                 @RequestParam String fromCurrency,
+                                 @RequestParam String toCurrency,
+                                 @RequestParam BigDecimal value,
+                                 @RequestParam(required = false) String to_login,
+                                 Model model,
+                                 HttpServletResponse response) {
+        if (sessionId != null) {
+            SessionValidationDto sessionValidation = sessionService.validateSession(sessionId);
+
+            if (sessionValidation.isValid()) {
+                // Validate currencies are not empty
+                if (fromCurrency == null || fromCurrency.trim().isEmpty()) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("Пожалуйста, выберите валюту для списания"));
+                    return "main";
+                }
+
+                if (toCurrency == null || toCurrency.trim().isEmpty()) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("Пожалуйста, выберите валюту для зачисления"));
+                    return "main";
+                }
+
+                // Validate amount is positive
+                if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("Сумма должна быть больше нуля"));
+                    return "main";
+                }
+
+                // Determine target username (self-transfer or other user)
+                String targetUsername;
+                if (to_login == null || to_login.trim().isEmpty()) {
+                    // Self-transfer - use current user's username
+                    targetUsername = sessionValidation.getUsername();
+                } else {
+                    // Transfer to other user
+                    targetUsername = to_login.trim();
+                }
+
+                // Find source account with the specified currency for this user
+                List<AccountDto> accounts = sessionValidation.getAccounts();
+                AccountDto sourceAccount = null;
+                if (accounts != null) {
+                    sourceAccount = accounts.stream()
+                            .filter(account -> fromCurrency.equals(account.getCurrencyCode()))
+                            .findFirst()
+                            .orElse(null);
+                }
+
+                if (sourceAccount == null) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("У вас нет счета в валюте " + fromCurrency));
+                    return "main";
+                }
+
+                if (!sourceAccount.isActive()) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("Счет в валюте " + fromCurrency + " неактивен"));
+                    return "main";
+                }
+
+                // Validate sufficient balance
+                if (value.compareTo(sourceAccount.getAmount()) > 0) {
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("Недостаточно средств на счете"));
+                    return "main";
+                }
+
+                try {
+                    UserAccountResponseDto userResponse = transferService.transfer(
+                            sessionId, value, fromCurrency, toCurrency, targetUsername);
+
+                    if (userResponse != null) {
+                        // Update session cookie
+                        Cookie sessionCookie = new Cookie("sessionId", userResponse.getSessionId());
+                        sessionCookie.setPath("/");
+                        sessionCookie.setMaxAge(30 * 60); // 30 minutes
+                        response.addCookie(sessionCookie);
+
+                        log.info("Transfer successful: {} {} from {} to {} for user {}",
+                                value, fromCurrency, sessionValidation.getUsername(), targetUsername, toCurrency);
+                        return "redirect:/";
+                    } else {
+                        populateModelWithUserData(model, sessionValidation);
+                        model.addAttribute("transferErrors", List.of("Подозрительная операция. Отклонино"));
+                        return "main";
+                    }
+                } catch (Exception e) {
+                    log.error("Transfer operation failed", e);
+                    populateModelWithUserData(model, sessionValidation);
+                    model.addAttribute("transferErrors", List.of("Ошибка при выполнении перевода: " + e.getMessage()));
                     return "main";
                 }
             }

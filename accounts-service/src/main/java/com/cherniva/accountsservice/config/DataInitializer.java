@@ -44,10 +44,10 @@ public class DataInitializer implements CommandLineRunner {
             log.info("Created USD currency");
 
             Currency yen = new Currency();
-            yen.setCode("CYN");
+            yen.setCode("CNY");
             yen.setName("Chinese yen");
             currencyRepo.save(yen);
-            log.info("Created CYN currency");
+            log.info("Created CNY currency");
 
             // Create user
             log.info("Creating user...");

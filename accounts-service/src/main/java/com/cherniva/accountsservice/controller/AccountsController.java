@@ -1,6 +1,7 @@
 package com.cherniva.accountsservice.controller;
 
 import com.cherniva.accountsservice.service.SessionService;
+import com.cherniva.common.dto.ExchangeRateDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.common.mapper.UserMapper;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -149,6 +151,67 @@ public class AccountsController {
             String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
             updatedUserAccountResponseDto.setSessionId(newSessionId);
 
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
+        } catch (Exception e) {
+            log.error("", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/transfer")
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<UserAccountResponseDto> transfer(@RequestParam String sessionId, @RequestParam BigDecimal amount,
+                                                           @RequestParam String username, @RequestBody ExchangeRateDto exchangeRateDto) {
+        try {
+            // Get session info and user details
+            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
+            UserAccountResponseDto userAccountResponseDto = sessionInfo.getUserData();
+            UserDetails sourceUser = userDetailsRepo.findById(userAccountResponseDto.getUserId()).orElseThrow();
+            
+            // Find source account with matching currency
+            Account sourceAccount = sourceUser.getAccounts().stream()
+                    .filter(account -> account.getCurrency().getCode().equals(exchangeRateDto.getFromCurrency()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Source account with currency " + exchangeRateDto.getFromCurrency() + " not found"));
+            
+            // Validate sufficient balance
+            if (amount.compareTo(sourceAccount.getAmount()) > 0) {
+                throw new RuntimeException("Insufficient balance for transfer");
+            }
+            
+            // Find target user by username
+            UserDetails targetUser = userDetailsRepo.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Target user not found"));
+            
+            // Find target account with matching currency
+            Account targetAccount = targetUser.getAccounts().stream()
+                    .filter(account -> account.getCurrency().getCode().equals(exchangeRateDto.getToCurrency()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Target account with currency " + exchangeRateDto.getToCurrency() + " not found"));
+            
+            // Calculate converted amount using exchange rate
+            BigDecimal convertedAmount = amount.multiply(exchangeRateDto.getSellRate());
+            
+            // Perform the transfer
+            sourceAccount.setAmount(sourceAccount.getAmount().subtract(amount));
+            targetAccount.setAmount(targetAccount.getAmount().add(convertedAmount));
+            
+            // Save both accounts
+            accountRepo.save(sourceAccount);
+            accountRepo.save(targetAccount);
+            
+            log.info("Successful transfer of {} {} to {} {} (converted amount: {} {})", 
+                    amount, exchangeRateDto.getFromCurrency(), 
+                    username, exchangeRateDto.getToCurrency(),
+                    convertedAmount, exchangeRateDto.getToCurrency());
+            
+            // Update session with new user data
+            sessionService.removeSession(sessionId);
+            UserDetails updatedSourceUser = userDetailsRepo.findById(sourceUser.getId()).orElseThrow();
+            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(updatedSourceUser);
+            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
+            updatedUserAccountResponseDto.setSessionId(newSessionId);
+            
             return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
             log.error("", e);

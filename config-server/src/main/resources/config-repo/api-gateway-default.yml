@@ -57,7 +57,7 @@ spring:
         - id: transfer-service
           uri: lb://transfer-service
           predicates:
-            - Path=/api/notifications/**, /notifications/**
+            - Path=/api/transfer/**
           metadata:
             service-name: transfer-service
 

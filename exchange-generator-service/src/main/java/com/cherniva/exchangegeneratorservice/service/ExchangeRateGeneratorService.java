@@ -37,7 +37,7 @@ public class ExchangeRateGeneratorService {
         this.restTemplate = restTemplate;
     }
     
-    @Scheduled(fixedRate = 30000) // Every 30 seconds
+    @Scheduled(fixedRate = 5000) // Every 5 seconds
     public void generateAndSendExchangeRates() {
         try {
             List<ExchangeRateDto> rates = new ArrayList<>();
