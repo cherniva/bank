@@ -42,6 +42,8 @@
 		<!-- Maven Plugins -->
 		<maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
 		<maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
+
+		<spring-cloud-contract.version>4.1.0</spring-cloud-contract.version>
 	</properties>
 
 	<modules>
