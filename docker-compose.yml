@@ -13,4 +13,20 @@ services:
     volumes:
       - ./keycloak-data:/opt/keycloak/data
       - ./keycloak-realm:/opt/keycloak/data/import
-    restart: unless-stopped 
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: bank-postgres
+    environment:
+      POSTGRES_DB: bank
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data: 
