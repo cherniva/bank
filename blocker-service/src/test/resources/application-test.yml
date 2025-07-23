@@ -1,0 +1,32 @@
+spring:
+  config:
+    import: ""
+    fail-fast: false
+  cloud:
+    config:
+      enabled: false
+      fail-fast: false
+    discovery:
+      enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://dummy
+          jwk-set-uri: http://dummy
+  jpa:
+    enabled: false
+  datasource:
+    enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 0
