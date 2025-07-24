@@ -1,0 +1,63 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.eclipse/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Maven
+**/target/
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# Logs
+*.log
+logs/
+pids/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+HELP.md
+*.md
+
+# Test files
+**/*Test.java
+**/src/test/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+
+# Build artifacts from shell scripts
+start-services.sh
+stop-services.sh
+
+# Keycloak data (runtime data, not build-time)
+keycloak-data/ 
