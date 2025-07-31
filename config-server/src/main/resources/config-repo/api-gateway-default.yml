@@ -50,7 +50,7 @@ spring:
         - id: cash-service
           uri: lb://cash-service
           predicates:
-            - Path=/api/cash/**
+            - Path=/api/cash/**, /cash/sync/**
           filters:
             - name: Retry
               args:
@@ -116,7 +116,7 @@ spring:
         - id: transfer-service
           uri: lb://transfer-service
           predicates:
-            - Path=/api/transfer/**
+            - Path=/api/transfer/**, /transfer/sync/**
           filters:
             - name: Retry
               args:
