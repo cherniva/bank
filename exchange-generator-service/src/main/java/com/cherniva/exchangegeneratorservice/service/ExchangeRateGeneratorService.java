@@ -1,6 +1,7 @@
 package com.cherniva.exchangegeneratorservice.service;
 
 import com.cherniva.common.dto.ExchangeRateDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,13 +19,11 @@ import java.util.List;
 import java.util.Random;
 
 @Service
+@Slf4j
 public class ExchangeRateGeneratorService {
     
     private final RestTemplate restTemplate;
     private final Random random = new Random();
-    
-    // Test JWT token
-    private static final String JWT_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJWY1JQOERKTEFiTU5fV29POG5EZmktWmlCVVpjVlNWRjUwNkxGVXdUci0wIn0.eyJleHAiOjE3NTI2OTE4MTIsImlhdCI6MTc1MjY5MDAxMiwianRpIjoiYzZhZjAyMWQtYzA3ZS00NTdkLThhMjUtMjg1Yzc5MWE0YTFhIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MDgwL3JlYWxtcy9iYW5rcmVhbG0iLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiYTk3ZGZjMzMtYTYyOC00NzBkLTllOWUtZThhYzBmMmI3Y2JiIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiZ2F0ZXdheSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiLyoiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwiZGVmYXVsdC1yb2xlcy1iYW5rcmVhbG0iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCByZXNvdXJjZS5yZWFkIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJjbGllbnRIb3N0IjoiMTkyLjE2OC42NS4xIiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LWdhdGV3YXkiLCJjbGllbnRBZGRyZXNzIjoiMTkyLjE2OC42NS4xIiwiY2xpZW50X2lkIjoiZ2F0ZXdheSJ9.FfdcAJkIEpr4uxp8j3gjPlud1nzyJjufzqf4ryBxFqe_SBObG9xDfA3H_IMrMdW2KHCPCRJYz7miD2PxDuWhyC-zUsQl8wNo44F_uhnPd7Dm-8dAyCfAd0sC_s65cpCRNHXbOgtevd2gcHUmWOsP5a87XMrxDudbEERgNralrnxyM5-EHFZJmZuRyeNOpRCFgyka7Ty9J98F3P6j2KfmMhAsfBQrNpux_-iRBqbrQQkkyEsuJ37SggcW7jKmRAdM90LHWFXV2DN8NKQbDLb1a250rJXjbX0aCV4TXWmN3RtuXOtoH2DPKmwvgi5Pq8C3HbasuDtL3F7SO1GUx4d-RA";
     
     // Base rates for RUB-USD and RUB-CNY
     private BigDecimal rubUsdBuyRate = new BigDecimal("0.0112");
@@ -52,7 +51,6 @@ public class ExchangeRateGeneratorService {
             
             // Create headers with JWT token
             HttpHeaders headers = new HttpHeaders();
-//            headers.set("Authorization", "Bearer " + JWT_TOKEN);
             headers.set("Content-Type", "application/json");
             
             // Create HTTP entity with headers and body
@@ -67,12 +65,11 @@ public class ExchangeRateGeneratorService {
                 Object.class
             );
             
-            System.out.println("Generated and sent new exchange rates at: " + LocalDateTime.now());
-            System.out.println("Response status: " + response.getStatusCode());
+            log.info("Generated and sent new exchange rates at: {}", LocalDateTime.now());
+            log.info("Response status: {}", response.getStatusCode());
             
         } catch (Exception e) {
-            System.err.println("Error generating/sending exchange rates: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error generating/sending exchange rates", e);
         }
     }
     

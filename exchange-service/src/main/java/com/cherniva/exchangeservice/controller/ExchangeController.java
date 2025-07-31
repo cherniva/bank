@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,13 +44,6 @@ public class ExchangeController {
             usdCny = calculateUsdCnyRate(rubUsd, rubCny);
         }
         rates.add(usdCny);
-        
-        // Add CNY-USD pair (CNY -> RUB -> USD)
-//        ExchangeRateDto cnyUsd = latestRates.get("CNY-USD");
-//        if (cnyUsd == null) {
-//            cnyUsd = calculateCnyUsdRate(rubUsd, rubCny);
-//        }
-//        rates.add(cnyUsd);
         
         response.setRates(rates);
         response.setMessage("Exchange rates retrieved successfully");
@@ -109,19 +101,5 @@ public class ExchangeController {
         usdCny.setSellRate(BigDecimal.ONE.divide(rubUsd.getSellRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubCny.getSellRate()));
         usdCny.setLastUpdated(LocalDateTime.now());
         return usdCny;
-    }
-    
-    private ExchangeRateDto calculateCnyUsdRate(ExchangeRateDto rubUsd, ExchangeRateDto rubCny) {
-        ExchangeRateDto cnyUsd = new ExchangeRateDto();
-        cnyUsd.setFromCurrency("CNY");
-        cnyUsd.setToCurrency("USD");
-        // CNY -> USD calculation:
-        // RUB-CNY = 0.0815 means 1 RUB = 0.0815 CNY, so 1 CNY = 1/0.0815 = 12.27 RUB
-        // RUB-USD = 0.0112 means 1 RUB = 0.0112 USD
-        // Therefore: 1 CNY = 12.27 RUB = 12.27 × 0.0112 = 0.137 USD
-        cnyUsd.setBuyRate(BigDecimal.ONE.divide(rubCny.getBuyRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubUsd.getBuyRate()));
-        cnyUsd.setSellRate(BigDecimal.ONE.divide(rubCny.getSellRate(), 4, BigDecimal.ROUND_HALF_EVEN).multiply(rubUsd.getSellRate()));
-        cnyUsd.setLastUpdated(LocalDateTime.now());
-        return cnyUsd;
     }
 }

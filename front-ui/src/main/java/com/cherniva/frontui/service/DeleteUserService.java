@@ -20,7 +20,7 @@ public class DeleteUserService {
     public void deleteUser(String sessionId) {
         try {
             log.info("delete user");
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/accounts/delete")
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/users/delete")
                     .queryParam("sessionId", sessionId);
 
             HttpHeaders headers = new HttpHeaders();

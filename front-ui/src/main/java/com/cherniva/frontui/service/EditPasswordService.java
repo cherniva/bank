@@ -21,7 +21,7 @@ public class EditPasswordService {
     public UserAccountResponseDto editPassword(String sessionId, String password) {
         try {
             log.info("edit password");
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/accounts/editPassword")
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/users/editPassword")
                     .queryParam("sessionId", sessionId)
                     .queryParam("password", password);
 

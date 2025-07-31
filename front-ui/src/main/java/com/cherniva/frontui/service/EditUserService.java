@@ -19,7 +19,7 @@ public class EditUserService {
     public UserAccountResponseDto editUser(String sessionId, String name, String surname, String birthdate) {
         try {
             log.info("Editing user with sessionId: {}, name: {}, surname: {}, birthdate: {}", sessionId, name, surname, birthdate);
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/accounts/editUser")
+            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/users/editUser")
                     .queryParam("sessionId", sessionId);
             
             // Add optional parameters only if they are not null or empty

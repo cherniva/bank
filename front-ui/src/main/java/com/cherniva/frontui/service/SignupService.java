@@ -18,7 +18,7 @@ public class SignupService {
         try {
             log.info("start registration");
             return restTemplate.postForObject(
-                    "lb://api-gateway/api/accounts/register",
+                    "lb://api-gateway/api/users/register",
                     registrationDto,
                     UserAccountResponseDto.class
             );
