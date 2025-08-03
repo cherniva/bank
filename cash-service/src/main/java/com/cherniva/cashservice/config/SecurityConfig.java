@@ -18,6 +18,11 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt() // Enable JWT-based authentication for the resource server
+                ).csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/h2-console/**") // Disable CSRF for H2 console
+                )
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin()) // Allow iframe for H2 console
                 );
         return http.build();
     }

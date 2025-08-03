@@ -2,9 +2,13 @@ package com.cherniva.accountsservice.controller;
 
 import com.cherniva.accountsservice.service.SessionService;
 import com.cherniva.accountsservice.service.NotificationService;
+import com.cherniva.accountsservice.service.SyncService;
+import com.cherniva.accountsservice.utils.SeqGenerator;
+import com.cherniva.common.dto.AccountDto;
 import com.cherniva.common.dto.ExchangeRateDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserRegistrationDto;
+import com.cherniva.common.mapper.AccountMapper;
 import com.cherniva.common.mapper.UserMapper;
 import com.cherniva.common.model.Account;
 import com.cherniva.common.model.UserDetails;
@@ -28,10 +32,11 @@ public class AccountsController {
     private final UserMapper userMapper;
     private final CurrencyRepo currencyRepo;
     private final UserDetailsRepo userDetailsRepo;
-    private final PasswordEncoder passwordEncoder;
     private final SessionService sessionService;
     private final AccountRepo accountRepo;
     private final NotificationService notificationService;
+    private final SyncService syncService;
+    private final AccountMapper accountMapper;
 
     @PostMapping("/addAccount")
     public ResponseEntity<UserAccountResponseDto> addAccount(@RequestParam String sessionId, @RequestParam String currencyCode) {
@@ -41,6 +46,7 @@ public class AccountsController {
             UserDetails userDetails = userDetailsRepo.findById(sessionInfo.getUserData().getUserId()).orElseThrow();
             log.info("User: {}", userDetails);
             Account newAccount = new Account();
+            newAccount.setId(SeqGenerator.getNextAccount());
             newAccount.setUserDetails(userDetails);
             newAccount.setAmount(BigDecimal.ZERO);
             newAccount.setCurrency(currencyRepo.findCurrencyByCode(currencyCode).orElseThrow());
@@ -53,6 +59,8 @@ public class AccountsController {
             sessionService.removeSession(sessionId);
             String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
             updatedUserAccountResponseDto.setSessionId(newSessionId);
+
+            syncService.syncCreation(newAccount);
             
             // Send notification for successful account creation
             notificationService.sendAddAccountNotification(
@@ -81,117 +89,6 @@ public class AccountsController {
                 log.error("Failed to send add account failure notification", notificationException);
             }
             
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PostMapping("/deposit")
-    public ResponseEntity<UserAccountResponseDto> deposit(@RequestParam String sessionId, @RequestParam Long accountId, @RequestParam BigDecimal amount) {
-        try {
-            Account account = accountRepo.findById(accountId).orElseThrow();
-            account.setAmount(account.getAmount().add(amount));
-            account = accountRepo.save(account);
-            log.info("Successful deposit of {} {}. Current balance is {} {}", amount, account.getCurrency().getCode(), account.getAmount(), account.getCurrency().getCode());
-
-            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
-            UserAccountResponseDto userAccountResponseDto = sessionInfo.getUserData();
-            UserDetails userDetails = userDetailsRepo.findById(userAccountResponseDto.getUserId()).orElseThrow();
-            sessionService.removeSession(sessionId);
-            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(userDetails);
-            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
-            updatedUserAccountResponseDto.setSessionId(newSessionId);
-
-            return ResponseEntity.ok(updatedUserAccountResponseDto);
-        } catch (Exception e) {
-            log.error("", e);
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PostMapping("/withdraw")
-    public ResponseEntity<UserAccountResponseDto> withdraw(@RequestParam String sessionId, @RequestParam Long accountId, @RequestParam BigDecimal amount) {
-        try {
-            Account account = accountRepo.findById(accountId).orElseThrow();
-            if (amount.compareTo(account.getAmount()) > 0) {
-                throw new RuntimeException("amount greater than balance");
-            }
-            account.setAmount(account.getAmount().subtract(amount));
-            account = accountRepo.save(account);
-
-            log.info("Successful withdraw of {} {}. Current balance is {} {}", amount, account.getCurrency().getCode(), account.getAmount(), account.getCurrency().getCode());
-
-            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
-            UserAccountResponseDto userAccountResponseDto = sessionInfo.getUserData();
-            UserDetails userDetails = userDetailsRepo.findById(userAccountResponseDto.getUserId()).orElseThrow();
-            sessionService.removeSession(sessionId);
-            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(userDetails);
-            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
-            updatedUserAccountResponseDto.setSessionId(newSessionId);
-
-            return ResponseEntity.ok(updatedUserAccountResponseDto);
-        } catch (Exception e) {
-            log.error("", e);
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PostMapping("/transfer")
-    @Transactional(rollbackFor = Exception.class)
-    public ResponseEntity<UserAccountResponseDto> transfer(@RequestParam String sessionId, @RequestParam BigDecimal amount,
-                                                           @RequestParam String username, @RequestBody ExchangeRateDto exchangeRateDto) {
-        try {
-            // Get session info and user details
-            SessionService.SessionInfo sessionInfo = sessionService.getSession(sessionId);
-            UserAccountResponseDto userAccountResponseDto = sessionInfo.getUserData();
-            UserDetails sourceUser = userDetailsRepo.findById(userAccountResponseDto.getUserId()).orElseThrow();
-            
-            // Find source account with matching currency
-            Account sourceAccount = sourceUser.getAccounts().stream()
-                    .filter(account -> account.getCurrency().getCode().equals(exchangeRateDto.getFromCurrency()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Source account with currency " + exchangeRateDto.getFromCurrency() + " not found"));
-            
-            // Validate sufficient balance
-            if (amount.compareTo(sourceAccount.getAmount()) > 0) {
-                throw new RuntimeException("Insufficient balance for transfer");
-            }
-            
-            // Find target user by username
-            UserDetails targetUser = userDetailsRepo.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("Target user not found"));
-            
-            // Find target account with matching currency
-            Account targetAccount = targetUser.getAccounts().stream()
-                    .filter(account -> account.getCurrency().getCode().equals(exchangeRateDto.getToCurrency()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Target account with currency " + exchangeRateDto.getToCurrency() + " not found"));
-            
-            // Calculate converted amount using exchange rate
-            BigDecimal convertedAmount = amount.multiply(exchangeRateDto.getSellRate());
-            
-            // Perform the transfer
-            sourceAccount.setAmount(sourceAccount.getAmount().subtract(amount));
-            targetAccount.setAmount(targetAccount.getAmount().add(convertedAmount));
-            
-            // Save both accounts
-            accountRepo.save(sourceAccount);
-            accountRepo.save(targetAccount);
-            
-            log.info("Successful transfer of {} {} to {} {} (converted amount: {} {})", 
-                    amount, exchangeRateDto.getFromCurrency(), 
-                    username, exchangeRateDto.getToCurrency(),
-                    convertedAmount, exchangeRateDto.getToCurrency());
-            
-            // Update session with new user data
-            sessionService.removeSession(sessionId);
-            UserDetails updatedSourceUser = userDetailsRepo.findById(sourceUser.getId()).orElseThrow();
-            UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(updatedSourceUser);
-            String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
-            updatedUserAccountResponseDto.setSessionId(newSessionId);
-            
-            return ResponseEntity.ok(updatedUserAccountResponseDto);
-        } catch (Exception e) {
-            log.error("", e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -239,7 +136,9 @@ public class AccountsController {
             UserAccountResponseDto updatedUserAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
             String newSessionId = sessionService.createSession(updatedUserAccountResponseDto);
             updatedUserAccountResponseDto.setSessionId(newSessionId);
-            
+
+            syncService.syncDeletion(accountId);
+
             // Send notification for successful operation
             notificationService.sendDeleteAccountNotification(
                     userDetails.getId().toString(),
@@ -284,6 +183,22 @@ public class AccountsController {
                 log.error("Failed to send delete account failure notification", notificationException);
             }
             
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<AccountDto> getAccountByUsernameAndCurrency(@RequestParam String username, @RequestParam String currencyCode) {
+        try {
+            var user = userDetailsRepo.findByUsername(username).orElseThrow();
+            var account = user.getAccounts().stream()
+                    .filter(a -> a.getCurrency().getCode().equals(currencyCode))
+                    .findFirst()
+                    .orElseThrow();
+            var accountDto = accountMapper.accountToAccountDto(account);
+
+            return ResponseEntity.ok(accountDto);
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }

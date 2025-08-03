@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 @Data
 public class Account {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     @ManyToOne
     @JoinColumn(name = "user_details_id")

@@ -5,3 +5,10 @@ spring:
     name: accounts-service
   config:
     import: "optional:configserver:http://localhost:8888"
+
+#logging:
+#  level:
+#    org.hibernate.SQL: DEBUG
+#    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+#    org.springframework.jdbc: DEBUG
+#    com.zaxxer.hikari: DEBUG

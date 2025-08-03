@@ -2,6 +2,8 @@ package com.cherniva.accountsservice.controller;
 
 import com.cherniva.accountsservice.service.NotificationService;
 import com.cherniva.accountsservice.service.SessionService;
+import com.cherniva.accountsservice.service.SyncService;
+import com.cherniva.accountsservice.utils.SeqGenerator;
 import com.cherniva.common.dto.UserAccountResponseDto;
 import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.common.mapper.UserMapper;
@@ -23,6 +25,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final SessionService sessionService;
     private final NotificationService notificationService;
+    private final SyncService syncService;
 
     @GetMapping("/hello")
     public String hello() {
@@ -33,8 +36,10 @@ public class UserController {
     public ResponseEntity<UserAccountResponseDto> registerUser(@RequestBody UserRegistrationDto userRegistrationDto) {
         try {
             UserDetails userDetails = userMapper.userRegistrationToUser(userRegistrationDto);
+            userDetails.setId(SeqGenerator.getNextUserDetails());
             userDetails.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             UserDetails savedUser = userDetailsRepo.save(userDetails);
+            syncService.syncUserCreation(savedUser);
             UserAccountResponseDto userAccountResponseDto = userMapper.userToUserAccountResponse(savedUser);
             return ResponseEntity.ok(userAccountResponseDto);
         } catch (Exception e) {

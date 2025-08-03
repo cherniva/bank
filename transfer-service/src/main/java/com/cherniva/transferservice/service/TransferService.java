@@ -3,12 +3,11 @@ package com.cherniva.transferservice.service;
 import com.cherniva.common.dto.ExchangeRateDto;
 import com.cherniva.common.dto.ExchangeRatesResponseDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.common.mapper.AccountMapper;
+import com.cherniva.common.repo.AccountRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -24,51 +23,64 @@ import static org.hibernate.engine.jdbc.Size.DEFAULT_SCALE;
 public class TransferService {
     private final RestTemplate restTemplate;
     private final NotificationService notificationService;
+    private final AccountRepo accountRepo;
+    private final AccountService accountService;
+    private final SyncService syncService;
+    private final SessionService sessionService;
 
-    public UserAccountResponseDto transfer(String sessionId, BigDecimal amount, String fromCurrency,
+    public UserAccountResponseDto transfer(String sessionId, Long accountId, BigDecimal amount, String fromCurrency,
                                            String toCurrency, String username) {
         try {
             var valid = validOperation();
             log.info("Operation validity status: {}", valid ? "valid" : "invalid");
-            
+
             if (valid) {
-                UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/accounts/transfer")
-                        .queryParam("sessionId", sessionId)
-                        .queryParam("amount", amount)
-                        .queryParam("username", username);
-
                 var rate = getExchangeRate(fromCurrency, toCurrency);
-                rate = validateRate(rate, fromCurrency, toCurrency); // reverse if needed
-                System.out.println(rate);
+                var validatedRate = validateRate(rate, fromCurrency, toCurrency); // reverse if needed
+                var sourceAccount = accountRepo.findById(accountId)
+                        .orElseThrow(() -> new RuntimeException("Source account with currency " + validatedRate.getFromCurrency() + " not found"));
 
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-
-                HttpEntity<ExchangeRateDto> requestEntity = new HttpEntity<>(rate, headers);
-
-                UserAccountResponseDto response = restTemplate.exchange(
-                                builder.toUriString(),
-                                HttpMethod.POST,
-                                requestEntity,
-                                UserAccountResponseDto.class)
-                        .getBody();
-                
-                // Send notification for successful transfer
-                if (response != null) {
-                    BigDecimal convertedAmount = amount.multiply(rate.getSellRate());
-                    notificationService.sendTransferNotification(
-                            response.getUserId().toString(),
-                            response.getUsername(),
-                            amount,
-                            fromCurrency,
-                            toCurrency,
-                            username,
-                            convertedAmount,
-                            true // success
-                    );
+                // Validate sufficient balance
+                if (amount.compareTo(sourceAccount.getAmount()) > 0) {
+                    throw new RuntimeException("Insufficient balance for transfer");
                 }
-                
-                return response;
+
+                var destinationAccountDto = accountService.getAccountByUsernameAndCurrencyCode(username, validatedRate.getToCurrency());
+                var destinationAccount = accountRepo.findById(destinationAccountDto.getAccountId()).get();
+
+                // Calculate converted amount using exchange rate
+                BigDecimal convertedAmount = amount.multiply(validatedRate.getSellRate());
+
+                // Perform the transfer
+                sourceAccount.setAmount(sourceAccount.getAmount().subtract(amount));
+                destinationAccount.setAmount(destinationAccount.getAmount().add(convertedAmount));
+
+                // Save both accounts
+                accountRepo.save(sourceAccount);
+                accountRepo.save(destinationAccount);
+
+                log.info("Successful transfer of {} {} to {} {} (converted amount: {} {})",
+                        amount, validatedRate.getFromCurrency(),
+                        username, validatedRate.getToCurrency(),
+                        convertedAmount, validatedRate.getToCurrency());
+
+                syncService.syncTransfer(sourceAccount, destinationAccount);
+
+                var updatedUserAccountResponseDto = sessionService.updateSession(sessionId);
+
+                // Send notification for successful transfer
+                notificationService.sendTransferNotification(
+                        updatedUserAccountResponseDto.getUserId().toString(),
+                        updatedUserAccountResponseDto.getUsername(),
+                        amount,
+                        fromCurrency,
+                        toCurrency,
+                        username,
+                        convertedAmount,
+                        true // success
+                );
+
+                return updatedUserAccountResponseDto;
             } else {
                 // Send notification for failed operation (blocked by fraud detection)
                 notificationService.sendTransferNotification(
@@ -85,7 +97,7 @@ public class TransferService {
             }
         } catch (Exception e) {
             log.error("Transfer operation failed", e);
-            
+
             // Send notification for failed operation (exception)
             notificationService.sendTransferNotification(
                     null, // userId will be null for failed operations
@@ -97,7 +109,7 @@ public class TransferService {
                     null, // convertedAmount will be null for failed operations
                     false // failed
             );
-            
+
             throw new RuntimeException(e);
         }
     }

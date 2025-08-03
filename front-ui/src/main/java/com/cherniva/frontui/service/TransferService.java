@@ -19,12 +19,13 @@ import java.math.BigDecimal;
 public class TransferService {
     private final RestTemplate restTemplate;
 
-    public UserAccountResponseDto transfer(String sessionId, BigDecimal amount, String fromCurrency, 
+    public UserAccountResponseDto transfer(String sessionId, Long accountId, BigDecimal amount, String fromCurrency,
                                          String toCurrency, String username) {
         try {
             log.info("Transferring {} from {} to {} for user {}", amount, fromCurrency, toCurrency, username);
             UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl("lb://api-gateway/api/transfer")
                     .queryParam("sessionId", sessionId)
+                    .queryParam("accountId", accountId)
                     .queryParam("amount", amount)
                     .queryParam("fromCurrency", fromCurrency)
                     .queryParam("toCurrency", toCurrency)

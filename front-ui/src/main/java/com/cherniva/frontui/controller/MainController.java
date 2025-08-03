@@ -371,7 +371,7 @@ public class MainController {
 
                 try {
                     UserAccountResponseDto userResponse = transferService.transfer(
-                            sessionId, value, fromCurrency, toCurrency, targetUsername);
+                            sessionId, sourceAccount.getAccountId(), value, fromCurrency, toCurrency, targetUsername);
 
                     if (userResponse != null) {
                         // Update session cookie

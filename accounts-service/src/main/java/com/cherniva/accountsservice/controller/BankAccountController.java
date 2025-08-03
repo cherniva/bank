@@ -5,9 +5,9 @@ import com.cherniva.common.dto.TransferDto;
 import com.cherniva.common.mapper.AccountMapper;
 import com.cherniva.common.model.Account;
 import com.cherniva.common.repo.AccountRepo;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -41,14 +41,11 @@ public class BankAccountController {
     }
 
     @PostMapping("/transfer")
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<Void> transfer(@RequestBody TransferDto transferDto) {
         try {
-            Account sourceAccount = accountMapper.accountDtoToAccount(transferDto.getSourceAccount());
-            Account destinationAccount = accountMapper.accountDtoToAccount(transferDto.getDestinationAccount());
-
-            accountRepo.save(sourceAccount);
-            accountRepo.save(destinationAccount);
+            updateAccount(transferDto.getSourceAccount());
+            updateAccount(transferDto.getDestinationAccount());
 
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -57,7 +54,9 @@ public class BankAccountController {
     }
 
     private Account updateAccount(AccountDto accountDto) {
-        Account account = accountMapper.accountDtoToAccount(accountDto);
+        var account = accountRepo.findById(accountDto.getAccountId()).get();
+        account.setAmount(accountDto.getAmount());
+
         return accountRepo.save(account);
     }
 }

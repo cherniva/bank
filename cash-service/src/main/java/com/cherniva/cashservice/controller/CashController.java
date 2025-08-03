@@ -2,7 +2,12 @@ package com.cherniva.cashservice.controller;
 
 import com.cherniva.cashservice.service.AccountsService;
 import com.cherniva.cashservice.service.NotificationService;
+import com.cherniva.cashservice.service.SessionService;
+import com.cherniva.cashservice.service.SyncService;
 import com.cherniva.common.dto.UserAccountResponseDto;
+import com.cherniva.common.model.Account;
+import com.cherniva.common.model.UserDetails;
+import com.cherniva.common.repo.AccountRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -17,47 +22,41 @@ import java.math.BigDecimal;
 @Slf4j
 public class CashController {
 
-    private final AccountsService accountsService;
+//    private final AccountsService accountsService;
+    private final AccountRepo accountRepo;
+    private final SyncService syncService;
+    private final SessionService sessionService;
     private final NotificationService notificationService;
 
     @PostMapping("/deposit")
     public ResponseEntity<UserAccountResponseDto> deposit(@RequestParam String sessionId, @RequestParam Long accountId, @RequestParam BigDecimal amount) {
         try {
-            var response = accountsService.deposit(sessionId, accountId, amount);
+            Account account = accountRepo.findById(accountId).orElseThrow();
+            account.setAmount(account.getAmount().add(amount));
+            account = accountRepo.save(account);
+            log.info("Successful deposit of {} {}. Current balance is {} {}", amount, account.getCurrency().getCode(), account.getAmount(), account.getCurrency().getCode());
 
-            // Send notification for successful deposit
-            if (response != null) {
-                notificationService.sendCashNotification(
-                        response.getUserId().toString(),
-                        response.getUsername(),
-                        amount,
-                        response.getAccounts().stream()
-                                .filter(account -> account.getAccountId().equals(accountId))
-                                .findFirst()
-                                .map(account -> account.getCurrencyCode())
-                                .orElse("UNKNOWN"),
-                        accountId,
-                        "deposit",
-                        true // success
-                );
-            } else {
-                // Send notification for failed operation (blocked by fraud detection)
-                notificationService.sendCashNotification(
-                        null, // userId will be null for failed operations
-                        null, // username will be null for failed operations
-                        amount,
-                        "UNKNOWN", // currency will be unknown for failed operations
-                        accountId,
-                        "deposit",
-                        false // failed
-                );
-            }
+            syncService.syncDeposit(account);
 
-            return ResponseEntity.ofNullable(response);
+            var updatedUserAccountResponseDto = sessionService.updateSession(sessionId);
+
+            notificationService.sendCashNotification(
+                    updatedUserAccountResponseDto.getUserId().toString(),
+                    updatedUserAccountResponseDto.getUsername(),
+                    amount,
+                    updatedUserAccountResponseDto.getAccounts().stream()
+                            .filter(a -> a.getAccountId().equals(accountId))
+                            .findFirst()
+                            .map(a -> a.getCurrencyCode())
+                            .orElse("UNKNOWN"),
+                    accountId,
+                    "deposit",
+                    true // success
+            );
+
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
         } catch (Exception e) {
-            log.error("Deposit operation failed", e);
-            
-            // Send notification for failed operation (exception)
+            log.error("", e);
             notificationService.sendCashNotification(
                     null, // userId will be null for failed operations
                     null, // username will be null for failed operations
@@ -67,7 +66,6 @@ public class CashController {
                     "deposit",
                     false // failed
             );
-            
             return ResponseEntity.badRequest().build();
         }
     }
@@ -75,41 +73,36 @@ public class CashController {
     @PostMapping("/withdraw")
     public ResponseEntity<UserAccountResponseDto> withdraw(@RequestParam String sessionId, @RequestParam Long accountId, @RequestParam BigDecimal amount) {
         try {
-            var response = accountsService.withdraw(sessionId, accountId, amount);
-
-            // Send notification for successful withdraw
-            if (response != null) {
-                notificationService.sendCashNotification(
-                        response.getUserId().toString(),
-                        response.getUsername(),
-                        amount,
-                        response.getAccounts().stream()
-                                .filter(account -> account.getAccountId().equals(accountId))
-                                .findFirst()
-                                .map(account -> account.getCurrencyCode())
-                                .orElse("UNKNOWN"),
-                        accountId,
-                        "withdraw",
-                        true // success
-                );
-            } else {
-                // Send notification for failed operation (blocked by fraud detection)
-                notificationService.sendCashNotification(
-                        null, // userId will be null for failed operations
-                        null, // username will be null for failed operations
-                        amount,
-                        "UNKNOWN", // currency will be unknown for failed operations
-                        accountId,
-                        "withdraw",
-                        false // failed
-                );
+            Account account = accountRepo.findById(accountId).orElseThrow();
+            if (amount.compareTo(account.getAmount()) > 0) {
+                throw new RuntimeException("amount greater than balance");
             }
+            account.setAmount(account.getAmount().subtract(amount));
+            account = accountRepo.save(account);
 
-            return ResponseEntity.ofNullable(response);
-        } catch (Exception e) {
-            log.error("Withdraw operation failed", e);
-            
-            // Send notification for failed operation (exception)
+            log.info("Successful withdraw of {} {}. Current balance is {} {}", amount, account.getCurrency().getCode(), account.getAmount(), account.getCurrency().getCode());
+
+            syncService.syncWithdraw(account);
+
+            var updatedUserAccountResponseDto = sessionService.updateSession(sessionId);
+
+            notificationService.sendCashNotification(
+                    updatedUserAccountResponseDto.getUserId().toString(),
+                    updatedUserAccountResponseDto.getUsername(),
+                    amount,
+                    updatedUserAccountResponseDto.getAccounts().stream()
+                            .filter(a -> a.getAccountId().equals(accountId))
+                            .findFirst()
+                            .map(a -> a.getCurrencyCode())
+                            .orElse("UNKNOWN"),
+                    accountId,
+                    "withdraw",
+                    true // success
+            );
+
+            return ResponseEntity.ok(updatedUserAccountResponseDto);
+        } catch (Exception e) { // todo ResponseEntity.ofNullable
+            log.error("", e);
             notificationService.sendCashNotification(
                     null, // userId will be null for failed operations
                     null, // username will be null for failed operations
@@ -119,9 +112,7 @@ public class CashController {
                     "withdraw",
                     false // failed
             );
-            
             return ResponseEntity.badRequest().build();
         }
     }
-
 }
