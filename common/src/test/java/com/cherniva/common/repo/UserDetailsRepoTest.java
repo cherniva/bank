@@ -100,6 +100,7 @@ class UserDetailsRepoTest extends BaseRepositoryTest {
     void save_NewUser_SavesSuccessfully() {
         // Arrange
         UserDetails newUser = new UserDetails();
+        newUser.setId(10L);
         newUser.setUsername("newuser");
         newUser.setPassword("encodedPassword");
         newUser.setName("Alice");
@@ -161,6 +162,7 @@ class UserDetailsRepoTest extends BaseRepositoryTest {
     void save_UserWithFutureBirthdate_SavesSuccessfully() {
         // Arrange - Edge case test
         UserDetails futureUser = new UserDetails();
+        futureUser.setId(13L);
         futureUser.setUsername("futureuser");
         futureUser.setPassword("password");
         futureUser.setName("Future");
@@ -180,6 +182,7 @@ class UserDetailsRepoTest extends BaseRepositoryTest {
     void save_UserWithVeryOldBirthdate_SavesSuccessfully() {
         // Arrange - Edge case test
         UserDetails oldUser = new UserDetails();
+        oldUser.setId(12L);
         oldUser.setUsername("olduser");
         oldUser.setPassword("password");
         oldUser.setName("Old");
@@ -199,6 +202,7 @@ class UserDetailsRepoTest extends BaseRepositoryTest {
     void findByUsername_WithSpecialCharacters_FindsUser() {
         // Arrange
         UserDetails specialUser = new UserDetails();
+        specialUser.setId(11L);
         specialUser.setUsername("user.name@domain.com");
         specialUser.setPassword("password");
         specialUser.setName("Special");

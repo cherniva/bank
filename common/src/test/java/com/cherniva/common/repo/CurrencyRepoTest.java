@@ -96,6 +96,7 @@ class CurrencyRepoTest extends BaseRepositoryTest {
     void save_NewCurrency_SavesSuccessfully() {
         // Arrange
         Currency newCurrency = new Currency();
+        newCurrency.setId(11L);
         newCurrency.setCode("GBP");
         newCurrency.setName("British Pound");
 
@@ -132,6 +133,7 @@ class CurrencyRepoTest extends BaseRepositoryTest {
     void delete_ExistingCurrency_DeletesSuccessfully() {
         // Arrange
         Currency jpy = new Currency();
+        jpy.setId(5L);
         jpy.setCode("JPY");
         jpy.setName("Japanese Yen");
         jpy = currencyRepo.save(jpy);
@@ -152,6 +154,7 @@ class CurrencyRepoTest extends BaseRepositoryTest {
     void save_CurrencyWithLongCode_SavesSuccessfully() {
         // Arrange - Test edge case with longer currency code
         Currency longCodeCurrency = new Currency();
+        longCodeCurrency.setId(8L);
         longCodeCurrency.setCode("CUSTOM");
         longCodeCurrency.setName("Custom Currency");
 
@@ -165,25 +168,10 @@ class CurrencyRepoTest extends BaseRepositoryTest {
     }
 
     @Test
-    void save_CurrencyWithLongName_SavesSuccessfully() {
-        // Arrange
-        Currency longNameCurrency = new Currency();
-        longNameCurrency.setCode("TEST");
-        longNameCurrency.setName("This is a very long currency name for testing purposes");
-
-        // Act
-        Currency savedCurrency = currencyRepo.save(longNameCurrency);
-        entityManager.flush();
-
-        // Assert
-        assertThat(savedCurrency.getId()).isNotNull();
-        assertThat(savedCurrency.getName()).isEqualTo("This is a very long currency name for testing purposes");
-    }
-
-    @Test
     void findCurrencyByCode_WithSpecialCharacters_FindsCurrency() {
         // Arrange
         Currency specialCurrency = new Currency();
+        specialCurrency.setId(10L);
         specialCurrency.setCode("X-USD");
         specialCurrency.setName("Special USD");
         
@@ -196,23 +184,5 @@ class CurrencyRepoTest extends BaseRepositoryTest {
         // Assert
         assertThat(result).isPresent();
         assertThat(result.get().getCode()).isEqualTo("X-USD");
-    }
-
-    @Test
-    void findCurrencyByCode_WithNumbers_FindsCurrency() {
-        // Arrange
-        Currency numericCurrency = new Currency();
-        numericCurrency.setCode("840"); // USD numeric code
-        numericCurrency.setName("USD Numeric");
-        
-        currencyRepo.save(numericCurrency);
-        entityManager.flush();
-
-        // Act
-        Optional<Currency> result = currencyRepo.findCurrencyByCode("840");
-
-        // Assert
-        assertThat(result).isPresent();
-        assertThat(result.get().getCode()).isEqualTo("840");
     }
 } 

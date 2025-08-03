@@ -50,22 +50,26 @@ public abstract class BaseRepositoryTest {
     void setupTestData() {
         // Create currencies
         usdCurrency = new Currency();
+        usdCurrency.setId(1L);
         usdCurrency.setCode("USD");
         usdCurrency.setName("US Dollar");
         usdCurrency = entityManager.persistAndFlush(usdCurrency);
 
         eurCurrency = new Currency();
+        eurCurrency.setId(2L);
         eurCurrency.setCode("EUR");
         eurCurrency.setName("Euro");
         eurCurrency = entityManager.persistAndFlush(eurCurrency);
 
         rubCurrency = new Currency();
+        rubCurrency.setId(3L);
         rubCurrency.setCode("RUB");
         rubCurrency.setName("Russian Ruble");
         rubCurrency = entityManager.persistAndFlush(rubCurrency);
 
         // Create users
         testUser1 = new UserDetails();
+        testUser1.setId(1L);
         testUser1.setUsername("testuser1");
         testUser1.setPassword("encodedPassword1");
         testUser1.setName("John");
@@ -74,6 +78,7 @@ public abstract class BaseRepositoryTest {
         testUser1 = entityManager.persistAndFlush(testUser1);
 
         testUser2 = new UserDetails();
+        testUser2.setId(2L);
         testUser2.setUsername("testuser2");
         testUser2.setPassword("encodedPassword2");
         testUser2.setName("Jane");
@@ -83,6 +88,7 @@ public abstract class BaseRepositoryTest {
 
         // Create accounts
         usdAccount = new Account();
+        usdAccount.setId(1L);
         usdAccount.setUserDetails(testUser1);
         usdAccount.setCurrency(usdCurrency);
         usdAccount.setAmount(new BigDecimal("1000.00"));
@@ -90,6 +96,7 @@ public abstract class BaseRepositoryTest {
         usdAccount = entityManager.persistAndFlush(usdAccount);
 
         eurAccount = new Account();
+        eurAccount.setId(2L);
         eurAccount.setUserDetails(testUser1);
         eurAccount.setCurrency(eurCurrency);
         eurAccount.setAmount(new BigDecimal("500.00"));

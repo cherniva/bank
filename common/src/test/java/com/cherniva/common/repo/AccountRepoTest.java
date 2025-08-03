@@ -55,6 +55,7 @@ class AccountRepoTest extends BaseRepositoryTest {
     void save_NewAccount_SavesSuccessfully() {
         // Arrange
         Account newAccount = new Account();
+        newAccount.setId(3L);
         newAccount.setUserDetails(testUser2);
         newAccount.setCurrency(rubCurrency);
         newAccount.setAmount(new BigDecimal("2000.00"));
@@ -126,6 +127,7 @@ class AccountRepoTest extends BaseRepositoryTest {
     void save_AccountWithNegativeAmount_SavesSuccessfully() {
         // Arrange - Bank accounts can have negative amounts (overdraft)
         Account overdraftAccount = new Account();
+        overdraftAccount.setId(7L);
         overdraftAccount.setUserDetails(testUser2);
         overdraftAccount.setCurrency(usdCurrency);
         overdraftAccount.setAmount(new BigDecimal("-100.00"));
@@ -144,6 +146,7 @@ class AccountRepoTest extends BaseRepositoryTest {
     void save_AccountWithLargeAmount_SavesSuccessfully() {
         // Arrange
         Account largeAccount = new Account();
+        largeAccount.setId(4L);
         largeAccount.setUserDetails(testUser2);
         largeAccount.setCurrency(eurCurrency);
         largeAccount.setAmount(new BigDecimal("999999999.99"));
