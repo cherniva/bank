@@ -1,6 +1,5 @@
 package com.cherniva.cashservice.controller;
 
-import com.cherniva.cashservice.service.AccountsService;
 import com.cherniva.cashservice.service.NotificationService;
 import com.cherniva.cashservice.service.SessionService;
 import com.cherniva.cashservice.service.SyncService;
@@ -113,7 +112,7 @@ public class CashController {
                 return ResponseEntity.ok(updatedUserAccountResponseDto);
             }
             return ResponseEntity.ofNullable(null);
-        } catch (Exception e) { // todo ResponseEntity.ofNullable
+        } catch (Exception e) {
             log.error("", e);
             notificationService.sendCashNotification(
                     null, // userId will be null for failed operations

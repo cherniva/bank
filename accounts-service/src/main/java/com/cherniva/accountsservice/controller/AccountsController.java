@@ -5,9 +5,7 @@ import com.cherniva.accountsservice.service.NotificationService;
 import com.cherniva.accountsservice.service.SyncService;
 import com.cherniva.accountsservice.utils.SeqGenerator;
 import com.cherniva.common.dto.AccountDto;
-import com.cherniva.common.dto.ExchangeRateDto;
 import com.cherniva.common.dto.UserAccountResponseDto;
-import com.cherniva.common.dto.UserRegistrationDto;
 import com.cherniva.common.mapper.AccountMapper;
 import com.cherniva.common.mapper.UserMapper;
 import com.cherniva.common.model.Account;
@@ -18,8 +16,6 @@ import com.cherniva.common.repo.UserDetailsRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
