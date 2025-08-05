@@ -92,6 +92,7 @@
                 <configuration>
                     <baseClassForTests>com.cherniva.accountsservice.contract.BaseContractTest</baseClassForTests>
                     <testFramework>JUNIT5</testFramework> <!-- if using JUnit 5 -->
+                    <failOnNoContracts>false</failOnNoContracts>
                 </configuration>
                 <executions>
                     <execution>

@@ -40,10 +40,10 @@ Start all services with proper dependencies:
 
 ```bash
 # Build and start all services
-docker-compose -f docker-compose-full.yml up --build
+docker-compose -f docker-compose.yml up --build
 
 # Or run in background
-docker-compose -f docker-compose-full.yml up -d --build
+docker-compose -f docker-compose.yml up -d --build
 ```
 
 ### Option 2: Infrastructure Only (for Local Development)
@@ -93,13 +93,13 @@ Monitor service startup progress:
 
 ```bash
 # Watch service status
-docker-compose -f docker-compose-full.yml ps
+docker-compose -f docker-compose.yml ps
 
 # Follow logs for all services
-docker-compose -f docker-compose-full.yml logs -f
+docker-compose -f docker-compose.yml logs -f
 
 # Follow logs for specific service
-docker-compose -f docker-compose-full.yml logs -f accounts-service
+docker-compose -f docker-compose.yml logs -f accounts-service
 ```
 
 ## 🌐 Service URLs
@@ -129,13 +129,13 @@ docker run -p 8888:8888 --name config-server bank/config-server
 ### Start specific services only:
 ```bash
 # Start only infrastructure
-docker-compose -f docker-compose-full.yml up -d postgres keycloak
+docker-compose -f docker-compose.yml up -d postgres keycloak
 
 # Start core services
-docker-compose -f docker-compose-full.yml up -d config-server eureka-server
+docker-compose -f docker-compose.yml up -d config-server eureka-server
 
 # Start specific business service
-docker-compose -f docker-compose-full.yml up -d accounts-service
+docker-compose -f docker-compose.yml up -d accounts-service
 ```
 
 ## 🛠️ Environment Configuration
@@ -166,13 +166,13 @@ JAVA_OPTS: "-Xmx512m -Xms256m"
 
 ```bash
 # Stop all services
-docker-compose -f docker-compose-full.yml down
+docker-compose -f docker-compose.yml down
 
 # Stop and remove volumes (⚠️ deletes database data)
-docker-compose -f docker-compose-full.yml down -v
+docker-compose -f docker-compose.yml down -v
 
 # Stop specific service
-docker-compose -f docker-compose-full.yml stop accounts-service
+docker-compose -f docker-compose.yml stop accounts-service
 ```
 
 ## 🔧 Troubleshooting
@@ -194,7 +194,7 @@ docker exec -it accounts-service bash
 docker exec -it accounts-service apt-get update && apt-get install -y net-tools
 
 # Enable debug logging
-docker-compose -f docker-compose-full.yml run -e LOGGING_LEVEL_ROOT=DEBUG accounts-service
+docker-compose -f docker-compose.yml run -e LOGGING_LEVEL_ROOT=DEBUG accounts-service
 ```
 
 ## 🔄 Development Workflow

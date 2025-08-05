@@ -25,6 +25,9 @@ COPY front-ui/pom.xml ./front-ui/
 # Copy common module source (needed by other modules)
 COPY common/src ./common/src
 
+# Install the parent POM first (needed by all modules)
+RUN mvn clean install -N -DskipTests
+
 # Download dependencies for this specific service
 RUN mvn dependency:go-offline -pl api-gateway
 
@@ -48,9 +51,6 @@ EXPOSE 9001
 
 # Environment variables
 ENV JAVA_OPTS=""
-ENV SPRING_PROFILES_ACTIVE=""
-ENV CONFIG_SERVER_URL="http://config-server:8888"
-ENV EUREKA_SERVER_URL="http://eureka-server:8761/eureka"
 
 # Run the application (as root - simpler approach)
-CMD java $JAVA_OPTS -jar app.jar 
+CMD java $JAVA_OPTS -jar app.jar --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888

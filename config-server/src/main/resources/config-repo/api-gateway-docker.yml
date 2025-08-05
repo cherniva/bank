@@ -1,0 +1,279 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        # Accounts Service
+        - id: accounts-service
+          uri: lb://accounts-service
+          predicates:
+            - Path=/api/auth/**, /api/accounts/**, /api/users/**, /accounts/sync/**, /accounts/session/*
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: accounts-service-cb
+                fallbackUri: forward:/fallback/accounts
+          metadata:
+            service-name: accounts-service
+
+        - id: blocker-service
+          uri: lb://blocker-service
+          predicates:
+            - Path=/blocker/check
+          filters:
+            - name: Retry
+              args:
+                retries: 2
+                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 200ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: blocker-service-cb
+                fallbackUri: forward:/fallback/blocker
+          metadata:
+            service-name: blocker-service
+
+        - id: cash-service
+          uri: lb://cash-service
+          predicates:
+            - Path=/api/cash/**, /cash/sync/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: cash-service-cb
+                fallbackUri: forward:/fallback/cash
+          metadata:
+            service-name: cash-service
+
+        - id: exchange-service
+          uri: lb://exchange-service
+          predicates:
+            - Path=/exchange/course/update, /exchange/course
+          filters:
+            - name: Retry
+              args:
+                retries: 2
+                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE,BAD_REQUEST
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 200ms
+                  maxBackoff: 1000ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: exchange-service-cb
+                fallbackUri: forward:/fallback/exchange
+          metadata:
+            service-name: exchange-service
+
+        - id: notifications-service
+          uri: lb://notifications-service
+          predicates:
+            - Path=/notifications/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: notifications-service-cb
+                fallbackUri: forward:/fallback/notifications
+          metadata:
+            service-name: notifications-service
+
+        - id: transfer-service
+          uri: lb://transfer-service
+          predicates:
+            - Path=/api/transfer/**, /transfer/sync/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: BAD_GATEWAY,INTERNAL_SERVER_ERROR,SERVICE_UNAVAILABLE
+                methods: GET,POST,PUT,DELETE
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
+            - name: CircuitBreaker
+              args:
+                name: transfer-service-cb
+                fallbackUri: forward:/fallback/transfer
+          metadata:
+            service-name: transfer-service
+
+      # Global timeout settings
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 10s
+        pool:
+          type: elastic
+          max-idle-time: 15s
+          max-life-time: 60s
+
+      # Default filters can be added here if needed
+      # default-filters:
+      #   - name: RequestRateLimiter
+      #     args:
+      #       redis-rate-limiter.replenishRate: 10
+      #       redis-rate-limiter.burstCapacity: 20
+      #       redis-rate-limiter.requestedTokens: 1
+
+  #      discovery:
+  #        locator:
+  #          enabled: true
+  #          lowerCaseServiceId: true
+  #      routes:
+  #        - id: accounts-service
+  #          uri: lb://accounts-service      # адрес user сервиса
+  #          predicates:
+  #            - Path=/api/hello          # перехватываем путь /api/hello
+  #          filters:
+  #            - TokenRelay=gateway-client # use clientRegistrationId
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            token-uri: http://keycloak:8080/realms/bankrealm/protocol/openid-connect/token
+            authorization-uri: http://keycloak:8080/realms/bankrealm/protocol/openid-connect/auth
+            user-info-uri: http://keycloak:8080/realms/bankrealm/protocol/openid-connect/userinfo
+            jwk-set-uri: http://keycloak:8080/realms/bankrealm/protocol/openid-connect/certs
+            issuer-uri: http://keycloak:8080/realms/bankrealm
+        registration:
+          gateway-client:
+            provider: keycloak
+            client-id: gateway
+            client-secret: DOh7wYosZk3mneOFOm2NGefWk5IzbVyi
+            scope: resource.read
+            authorization-grant-type: client_credentials
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/bankrealm
+
+## Gateway authentication configuration
+#gateway:
+#  auth:
+#    # Service path mappings to OAuth2 client registration IDs
+#    service-client-mappings:
+#      "/api/accounts/": "gateway-client"
+#      "/accounts/": "gateway-client"
+#      "/api/users/": "gateway-client"
+#      "/users/": "gateway-client"
+#      "/api/transactions/": "gateway-client"
+#      "/transactions/": "gateway-client"
+#      "/api/notifications/": "gateway-client"
+#      "/notifications/": "gateway-client"
+#      # You can add different clients for different services
+#      # "/api/admin/": "admin-gateway-client"
+#      # "/api/internal/": "internal-gateway-client"
+#
+#    # Paths that should skip authentication entirely
+#    skip-auth-paths:
+#      - "/auth/"
+#      - "/public/"
+#      - "/actuator/"
+#      - "/health"
+#      - "/info"
+#      - "/swagger-ui/"
+#      - "/v3/api-docs/"
+#
+#    # Default OAuth2 client registration ID for API paths without specific mapping
+#    default-client-registration-id: "gateway-client"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowType: COUNT_BASED
+        minimumNumberOfCalls: 1  # Allow circuit breaker to work with fewer calls for testing
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        registerHealthIndicator: true
+    instances:
+      accounts-service-cb:
+        baseConfig: default
+      blocker-service-cb:
+        baseConfig: default
+        waitDurationInOpenState: 5s
+      cash-service-cb:
+        baseConfig: default
+      exchange-service-cb:
+        baseConfig: default
+        waitDurationInOpenState: 15s
+        minimumNumberOfCalls: 3  # Give exchange service a few tries before opening
+      notifications-service-cb:
+        baseConfig: default
+      transfer-service-cb:
+        baseConfig: default
+
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 100ms
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
+    instances:
+      accounts-service-retry:
+        baseConfig: default
+      blocker-service-retry:
+        baseConfig: default
+        maxAttempts: 2
+      cash-service-retry:
+        baseConfig: default
+      exchange-service-retry:
+        baseConfig: default
+        waitDuration: 200ms
+        maxAttempts: 2
+      notifications-service-retry:
+        baseConfig: default
+      transfer-service-retry:
+        baseConfig: default

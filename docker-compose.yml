@@ -1,6 +1,29 @@
 version: '3.8'
 
+networks:
+  bank-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
 services:
+  # Infrastructure Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: bank-postgres
+    environment:
+      POSTGRES_DB: bank
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bank-network
+    restart: unless-stopped
+
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.4
     container_name: keycloak
@@ -13,21 +36,186 @@ services:
     volumes:
       - ./keycloak-data:/opt/keycloak/data
       - ./keycloak-realm:/opt/keycloak/data/import
+    networks:
+      - bank-network
     restart: unless-stopped
 
-  postgres:
-    image: postgres:15-alpine
-    container_name: bank-postgres
-    environment:
-      POSTGRES_DB: bank
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1
+  # Core Services
+  config-server:
+    build:
+      context: .
+      dockerfile: config-server/Dockerfile
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    container_name: config-server
     ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - "8888:8888"
+    environment:
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    networks:
+      - bank-network
     restart: unless-stopped
 
-volumes:
-  postgres_data:
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    networks:
+      - bank-network
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "9001:9001"
+    environment:
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Business Services
+  accounts-service:
+    build:
+      context: .
+      dockerfile: accounts-service/Dockerfile
+    container_name: accounts-service
+    ports:
+      - "8091:8091"
+    environment:
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+#
+#  cash-service:
+#    build:
+#      context: .
+#      dockerfile: cash-service/Dockerfile
+#    container_name: cash-service
+#    ports:
+#      - "8092:8092"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  exchange-service:
+#    build:
+#      context: .
+#      dockerfile: exchange-service/Dockerfile
+#    container_name: exchange-service
+#    ports:
+#      - "8093:8093"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  transfer-service:
+#    build:
+#      context: .
+#      dockerfile: transfer-service/Dockerfile
+#    container_name: transfer-service
+#    ports:
+#      - "8094:8094"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  blocker-service:
+#    build:
+#      context: .
+#      dockerfile: blocker-service/Dockerfile
+#    container_name: blocker-service
+#    ports:
+#      - "8095:8095"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  notifications-service:
+#    build:
+#      context: .
+#      dockerfile: notifications-service/Dockerfile
+#    container_name: notifications-service
+#    ports:
+#      - "8096:8096"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  exchange-generator-service:
+#    build:
+#      context: .
+#      dockerfile: exchange-generator-service/Dockerfile
+#    container_name: exchange-generator-service
+#    ports:
+#      - "8097:8097"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  # Frontend
+#  front-ui:
+#    build:
+#      context: .
+#      dockerfile: front-ui/Dockerfile
+#    container_name: front-ui
+#    ports:
+#      - "8090:8090"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    networks:
+#      - bank-network
+#    depends_on:
+#      config-server:
+#        condition: service_healthy
+#    restart: unless-stopped

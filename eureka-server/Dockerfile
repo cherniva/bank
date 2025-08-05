@@ -25,6 +25,9 @@ COPY front-ui/pom.xml ./front-ui/
 # Copy common module source (needed by other modules)
 COPY common/src ./common/src
 
+# Install the parent POM first (needed by all modules)
+RUN mvn clean install -N -DskipTests
+
 # Download dependencies for this specific service
 RUN mvn dependency:go-offline -pl eureka-server
 
@@ -48,7 +51,7 @@ EXPOSE 8761
 
 # Environment variables
 ENV JAVA_OPTS=""
-ENV SPRING_PROFILES_ACTIVE=""
+ENV SPRING_APPLICATION_NAME="eureka-server"
 
 # Run the application (as root - simpler approach)
 CMD java $JAVA_OPTS -jar app.jar 

@@ -1,3 +1,10 @@
+# Environment variables
+ENV JAVA_OPTS=""
+ENV SPRING_PROFILES_ACTIVE="docker"
+ENV SPRING_APPLICATION_NAME="cash-service"
+ENV CONFIG_SERVER_URL="http://config-server:8888"
+ENV EUREKA_SERVER_URL="http://eureka-server:8761/eureka"
+
 # Multi-stage build for Cash Service
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
@@ -25,6 +32,12 @@ COPY front-ui/pom.xml ./front-ui/
 # Copy common module source (needed by other modules)
 COPY common/src ./common/src
 
+# Install the parent POM first (needed by common module)
+RUN mvn clean install -N -DskipTests
+
+# Build and install the common module first so it's available as a dependency
+RUN mvn clean install -pl common -DskipTests
+
 # Download dependencies for this specific service
 RUN mvn dependency:go-offline -pl cash-service
 
@@ -48,7 +61,8 @@ EXPOSE 8092
 
 # Environment variables
 ENV JAVA_OPTS=""
-ENV SPRING_PROFILES_ACTIVE=""
+ENV SPRING_PROFILES_ACTIVE="docker"
+ENV SPRING_APPLICATION_NAME="cash-service"
 ENV CONFIG_SERVER_URL="http://config-server:8888"
 ENV EUREKA_SERVER_URL="http://eureka-server:8761/eureka"
 

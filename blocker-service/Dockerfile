@@ -25,6 +25,9 @@ COPY front-ui/pom.xml ./front-ui/
 # Copy common module source (needed by other modules)
 COPY common/src ./common/src
 
+# Install the parent POM first (needed by all modules)
+RUN mvn clean install -N -DskipTests
+
 # Download dependencies for this specific service
 RUN mvn dependency:go-offline -pl blocker-service
 
@@ -48,7 +51,8 @@ EXPOSE 8095
 
 # Environment variables
 ENV JAVA_OPTS=""
-ENV SPRING_PROFILES_ACTIVE=""
+ENV SPRING_PROFILES_ACTIVE="docker"
+ENV SPRING_APPLICATION_NAME="blocker-service"
 ENV CONFIG_SERVER_URL="http://config-server:8888"
 ENV EUREKA_SERVER_URL="http://eureka-server:8761/eureka"
 
