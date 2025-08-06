@@ -1,10 +1,3 @@
-# Environment variables
-ENV JAVA_OPTS=""
-ENV SPRING_PROFILES_ACTIVE="docker"
-ENV SPRING_APPLICATION_NAME="cash-service"
-ENV CONFIG_SERVER_URL="http://config-server:8888"
-ENV EUREKA_SERVER_URL="http://eureka-server:8761/eureka"
-
 # Multi-stage build for Cash Service
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
@@ -60,11 +53,6 @@ COPY --from=builder /app/cash-service/target/*.jar app.jar
 EXPOSE 8092
 
 # Environment variables
-ENV JAVA_OPTS=""
-ENV SPRING_PROFILES_ACTIVE="docker"
-ENV SPRING_APPLICATION_NAME="cash-service"
-ENV CONFIG_SERVER_URL="http://config-server:8888"
-ENV EUREKA_SERVER_URL="http://eureka-server:8761/eureka"
-
-# Run the application (as root - simpler approach)
-CMD java $JAVA_OPTS -jar app.jar 
+ENV JAVA_OPTS="-Dspring.profiles.active=docker"
+ENV CONFIG_SERVER_PATH="config-server"
+CMD java $JAVA_OPTS -jar app.jar

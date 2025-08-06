@@ -55,8 +55,8 @@ services:
     container_name: config-server
     ports:
       - "8888:8888"
-    environment:
-      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
     networks:
       - bank-network
     restart: unless-stopped
@@ -68,8 +68,8 @@ services:
     container_name: eureka-server
     ports:
       - "8761:8761"
-    environment:
-      JAVA_OPTS: "-Xmx512m -Xms256m"
+#    environment:
+#      JAVA_OPTS: "-Xmx512m -Xms256m"
     networks:
       - bank-network
     restart: unless-stopped
@@ -104,101 +104,89 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-#  cash-service:
-#    build:
-#      context: .
-#      dockerfile: cash-service/Dockerfile
-#    container_name: cash-service
-#    ports:
-#      - "8092:8092"
-#    environment:
-#      JAVA_OPTS: "-Xmx512m -Xms256m"
-#    networks:
-#      - bank-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    restart: unless-stopped
-#
-#  exchange-service:
-#    build:
-#      context: .
-#      dockerfile: exchange-service/Dockerfile
-#    container_name: exchange-service
-#    ports:
-#      - "8093:8093"
-#    environment:
-#      JAVA_OPTS: "-Xmx512m -Xms256m"
-#    networks:
-#      - bank-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    restart: unless-stopped
-#
-#  transfer-service:
-#    build:
-#      context: .
-#      dockerfile: transfer-service/Dockerfile
-#    container_name: transfer-service
-#    ports:
-#      - "8094:8094"
-#    environment:
-#      JAVA_OPTS: "-Xmx512m -Xms256m"
-#    networks:
-#      - bank-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    restart: unless-stopped
-#
-#  blocker-service:
-#    build:
-#      context: .
-#      dockerfile: blocker-service/Dockerfile
-#    container_name: blocker-service
-#    ports:
-#      - "8095:8095"
-#    environment:
-#      JAVA_OPTS: "-Xmx512m -Xms256m"
-#    networks:
-#      - bank-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    restart: unless-stopped
-#
-#  notifications-service:
-#    build:
-#      context: .
-#      dockerfile: notifications-service/Dockerfile
-#    container_name: notifications-service
-#    ports:
-#      - "8096:8096"
-#    environment:
-#      JAVA_OPTS: "-Xmx512m -Xms256m"
-#    networks:
-#      - bank-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    restart: unless-stopped
-#
-#  exchange-generator-service:
-#    build:
-#      context: .
-#      dockerfile: exchange-generator-service/Dockerfile
-#    container_name: exchange-generator-service
-#    ports:
-#      - "8097:8097"
-#    environment:
-#      JAVA_OPTS: "-Xmx512m -Xms256m"
-#    networks:
-#      - bank-network
-#    depends_on:
-#      config-server:
-#        condition: service_healthy
-#    restart: unless-stopped
+  cash-service:
+    build:
+      context: .
+      dockerfile: cash-service/Dockerfile
+    container_name: cash-service
+    ports:
+      - "8092:8092"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  exchange-service:
+    build:
+      context: .
+      dockerfile: exchange-service/Dockerfile
+    container_name: exchange-service
+    ports:
+      - "8093:8093"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  transfer-service:
+    build:
+      context: .
+      dockerfile: transfer-service/Dockerfile
+    container_name: transfer-service
+    ports:
+      - "8094:8094"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  blocker-service:
+    build:
+      context: .
+      dockerfile: blocker-service/Dockerfile
+    container_name: blocker-service
+    ports:
+      - "8095:8095"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notifications-service:
+    build:
+      context: .
+      dockerfile: notifications-service/Dockerfile
+    container_name: notifications-service
+    ports:
+      - "8096:8096"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  exchange-generator-service:
+    build:
+      context: .
+      dockerfile: exchange-generator-service/Dockerfile
+    container_name: exchange-generator-service
+    ports:
+      - "8097:8097"
+    networks:
+      - bank-network
+    depends_on:
+      config-server:
+        condition: service_healthy
+    restart: unless-stopped
 #
   # Frontend
   front-ui:

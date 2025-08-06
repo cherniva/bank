@@ -4,7 +4,7 @@ spring:
   application:
     name: exchange-service
   config:
-    import: "configserver:http://localhost:8888"
+    import: "configserver:http://${CONFIG_SERVER_PATH:localhost}:8888"
 
 logging:
   level:

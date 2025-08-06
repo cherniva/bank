@@ -4,7 +4,7 @@ spring:
   application:
     name: blocker-service
   config:
-    import: "optional:configserver:http://localhost:8888"
+    import: "optional:configserver:http://${CONFIG_SERVER_PATH:localhost}:8888"
 
 logging:
   level:
