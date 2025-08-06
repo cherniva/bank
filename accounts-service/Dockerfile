@@ -53,7 +53,6 @@ COPY --from=builder /app/accounts-service/target/*.jar app.jar
 EXPOSE 8091
 
 # Environment variables
-ENV JAVA_OPTS=""
-
-# Run the application (as root - simpler approach)
-CMD java $JAVA_OPTS -jar app.jar --spring.profiles.active=docker --spring.cloud.config.uri=http://config-server:8888
+ENV JAVA_OPTS="-Dspring.profiles.active=docker"
+ENV CONFIG_SERVER_PATH="config-server"
+CMD java $JAVA_OPTS -jar app.jar

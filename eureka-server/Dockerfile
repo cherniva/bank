@@ -52,6 +52,7 @@ EXPOSE 8761
 # Environment variables
 ENV JAVA_OPTS=""
 ENV SPRING_APPLICATION_NAME="eureka-server"
+ENV HOST="eureka-server"
 
 # Run the application (as root - simpler approach)
 CMD java $JAVA_OPTS -jar app.jar 

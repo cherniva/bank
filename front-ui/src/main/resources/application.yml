@@ -4,7 +4,7 @@ spring:
   application:
     name: front-ui
   config:
-    import: "configserver:http://localhost:8888"
+    import: "configserver:http://${CONFIG_SERVER_PATH:localhost}:8888"
   thymeleaf:
     cache: false
     mode: HTML
@@ -12,10 +12,10 @@ spring:
     servlet:
       content-type: text/html
 
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    org.springframework.web.reactive: DEBUG
-    reactor.netty: DEBUG
+#logging:
+#  level:
+#    org.springframework.security: DEBUG
+#    org.springframework.cloud.gateway: DEBUG
+#    org.springframework.security.oauth2: DEBUG
+#    org.springframework.web.reactive: DEBUG
+#    reactor.netty: DEBUG
